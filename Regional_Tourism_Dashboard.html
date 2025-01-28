@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_7009294e6e7b9f4cfe0aa114739dbb66 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+<div style="
+    position: fixed; 
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    font-family: Arial;
+    font-size: 14px;
+    line-height: 1.4;
+">
+    <h4 style="margin:0 0 12px 0; color: #1E90FF; font-size: 16px;">⛅ Weather Legend</h4>
+    <div style="display: flex; align-items: center; margin: 10px 0;">
+        <div style="background: #ff0000; width: 22px; height: 22px; border-radius: 50%; margin-right: 12px;"></div>
+        <span style="font-weight: 500;">Thunderstorm/Heavy Rain</span>
+    </div>
+    <div style="display: flex; align-items: center; margin: 10px 0;">
+        <div style="background: #ffa500; width: 22px; height: 22px; border-radius: 50%; margin-right: 12px;"></div>
+        <span style="font-weight: 500;">Rain/Clouds</span>
+    </div>
+    <div style="display: flex; align-items: center; margin: 10px 0;">
+        <div style="background: #00ff00; width: 22px; height: 22px; border-radius: 50%; margin-right: 12px;"></div>
+        <span style="font-weight: 500;">Clear/Sunny</span>
+    </div>
+</div>
+    
+            <div class="folium-map" id="map_7009294e6e7b9f4cfe0aa114739dbb66" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_7009294e6e7b9f4cfe0aa114739dbb66 = L.map(
+                "map_7009294e6e7b9f4cfe0aa114739dbb66",
+                {
+                    center: [23.685, 90.3563],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 7,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_05f355ad2d0fd638f18985dd014aa78f = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e",
+  "subdomains": "abcd",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_05f355ad2d0fd638f18985dd014aa78f.addTo(map_7009294e6e7b9f4cfe0aa114739dbb66);
+        
+    
+            var marker_ee25a89fb2334e8a7fe551fb87402aa0 = L.marker(
+                [21.4272, 92.0058],
+                {
+}
+            ).addTo(map_7009294e6e7b9f4cfe0aa114739dbb66);
+        
+    
+            var icon_e04ac01ca370a010b3a1f27c0e4a23de = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+            marker_ee25a89fb2334e8a7fe551fb87402aa0.setIcon(icon_e04ac01ca370a010b3a1f27c0e4a23de);
+        
+    
+        var popup_a1c03e5f2eaeb4740329495a1727a947 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_01b3881ac08f10d99241376cb1bc7ad8 = $(`<div id="html_01b3881ac08f10d99241376cb1bc7ad8" style="width: 100.0%; height: 100.0%;">         <div style="width: 260px; padding: 8px;">             <h3 style="color: #1E90FF; margin: 0 0 8px 0; font-size: 18px;">Cox's Bazar</h3>             <div style="border-bottom: 2px solid #eee; margin-bottom: 10px;"></div>             <p style="margin: 5px 0;">                 <b>📊 Visitors:</b> 8,500<br>                 <b>🌡️ Temperature:</b> N/A°C<br>                 <b>⛅ Condition:</b> Service Down<br>                 <b>💧 Humidity:</b> N/A%             </p>             <div style="margin-top: 15px;">                 <a href="https://www.google.com/maps/dir//21.4272,92.0058"                     target="_blank"                     style="display: block; background: #228B22; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none; margin-bottom: 8px;">                    🚗 Get Directions                 </a>                 <a href="https://www.google.com/maps/search/hotels+in+Cox's Bazar"                     target="_blank"                     style="display: block; background: #FF4500; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none; margin-bottom: 8px;">                    🏨 Find Hotels                 </a>                 <a href="https://www.google.com/maps/search/hospitals+in+Cox's Bazar"                     target="_blank"                     style="display: block; background: #DC143C; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none;">                    ⚕️ Emergency Services                 </a>             </div>         </div>         </div>`)[0];
+                popup_a1c03e5f2eaeb4740329495a1727a947.setContent(html_01b3881ac08f10d99241376cb1bc7ad8);
+            
+        
+
+        marker_ee25a89fb2334e8a7fe551fb87402aa0.bindPopup(popup_a1c03e5f2eaeb4740329495a1727a947)
+        ;
+
+        
+    
+    
+            var marker_8ad78240eae72ef213f03374d232073f = L.marker(
+                [20.6143, 92.3234],
+                {
+}
+            ).addTo(map_7009294e6e7b9f4cfe0aa114739dbb66);
+        
+    
+            var icon_e3b53e1307659f0bf421ece30298c804 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+            marker_8ad78240eae72ef213f03374d232073f.setIcon(icon_e3b53e1307659f0bf421ece30298c804);
+        
+    
+        var popup_3062ce09f7347bd8fe8cc847fdaf59c5 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_e5808ddd7f6b97ce4d459703e0a003e5 = $(`<div id="html_e5808ddd7f6b97ce4d459703e0a003e5" style="width: 100.0%; height: 100.0%;">         <div style="width: 260px; padding: 8px;">             <h3 style="color: #1E90FF; margin: 0 0 8px 0; font-size: 18px;">Saint Martin</h3>             <div style="border-bottom: 2px solid #eee; margin-bottom: 10px;"></div>             <p style="margin: 5px 0;">                 <b>📊 Visitors:</b> 1,200<br>                 <b>🌡️ Temperature:</b> N/A°C<br>                 <b>⛅ Condition:</b> Service Down<br>                 <b>💧 Humidity:</b> N/A%             </p>             <div style="margin-top: 15px;">                 <a href="https://www.google.com/maps/dir//20.6143,92.3234"                     target="_blank"                     style="display: block; background: #228B22; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none; margin-bottom: 8px;">                    🚗 Get Directions                 </a>                 <a href="https://www.google.com/maps/search/hotels+in+Saint Martin"                     target="_blank"                     style="display: block; background: #FF4500; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none; margin-bottom: 8px;">                    🏨 Find Hotels                 </a>                 <a href="https://www.google.com/maps/search/hospitals+in+Saint Martin"                     target="_blank"                     style="display: block; background: #DC143C; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none;">                    ⚕️ Emergency Services                 </a>             </div>         </div>         </div>`)[0];
+                popup_3062ce09f7347bd8fe8cc847fdaf59c5.setContent(html_e5808ddd7f6b97ce4d459703e0a003e5);
+            
+        
+
+        marker_8ad78240eae72ef213f03374d232073f.bindPopup(popup_3062ce09f7347bd8fe8cc847fdaf59c5)
+        ;
+
+        
+    
+    
+            var marker_d772f9ed798c70749d4adff01edbad4c = L.marker(
+                [21.9497, 89.1833],
+                {
+}
+            ).addTo(map_7009294e6e7b9f4cfe0aa114739dbb66);
+        
+    
+            var icon_a36fb4204dd49f88003a3aeb8b0e7829 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+            marker_d772f9ed798c70749d4adff01edbad4c.setIcon(icon_a36fb4204dd49f88003a3aeb8b0e7829);
+        
+    
+        var popup_9b0889777aa73c2d315aeb53c552af62 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_9d72294f36c2afa76c92a9d52366d8fb = $(`<div id="html_9d72294f36c2afa76c92a9d52366d8fb" style="width: 100.0%; height: 100.0%;">         <div style="width: 260px; padding: 8px;">             <h3 style="color: #1E90FF; margin: 0 0 8px 0; font-size: 18px;">Sundarban</h3>             <div style="border-bottom: 2px solid #eee; margin-bottom: 10px;"></div>             <p style="margin: 5px 0;">                 <b>📊 Visitors:</b> 900<br>                 <b>🌡️ Temperature:</b> N/A°C<br>                 <b>⛅ Condition:</b> Service Down<br>                 <b>💧 Humidity:</b> N/A%             </p>             <div style="margin-top: 15px;">                 <a href="https://www.google.com/maps/dir//21.9497,89.1833"                     target="_blank"                     style="display: block; background: #228B22; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none; margin-bottom: 8px;">                    🚗 Get Directions                 </a>                 <a href="https://www.google.com/maps/search/hotels+in+Sundarban"                     target="_blank"                     style="display: block; background: #FF4500; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none; margin-bottom: 8px;">                    🏨 Find Hotels                 </a>                 <a href="https://www.google.com/maps/search/hospitals+in+Sundarban"                     target="_blank"                     style="display: block; background: #DC143C; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none;">                    ⚕️ Emergency Services                 </a>             </div>         </div>         </div>`)[0];
+                popup_9b0889777aa73c2d315aeb53c552af62.setContent(html_9d72294f36c2afa76c92a9d52366d8fb);
+            
+        
+
+        marker_d772f9ed798c70749d4adff01edbad4c.bindPopup(popup_9b0889777aa73c2d315aeb53c552af62)
+        ;
+
+        
+    
+    
+            var marker_4701e14993a880cce936c9bd85ba0b6b = L.marker(
+                [22.1953, 92.2195],
+                {
+}
+            ).addTo(map_7009294e6e7b9f4cfe0aa114739dbb66);
+        
+    
+            var icon_1ee38f41331bf53954050659937d0405 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+            marker_4701e14993a880cce936c9bd85ba0b6b.setIcon(icon_1ee38f41331bf53954050659937d0405);
+        
+    
+        var popup_6ee9b42b6a39cfc1ead68298839defe7 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_845acbe0d176ce6ef08249f0cc692f72 = $(`<div id="html_845acbe0d176ce6ef08249f0cc692f72" style="width: 100.0%; height: 100.0%;">         <div style="width: 260px; padding: 8px;">             <h3 style="color: #1E90FF; margin: 0 0 8px 0; font-size: 18px;">Bandarban</h3>             <div style="border-bottom: 2px solid #eee; margin-bottom: 10px;"></div>             <p style="margin: 5px 0;">                 <b>📊 Visitors:</b> 2,300<br>                 <b>🌡️ Temperature:</b> N/A°C<br>                 <b>⛅ Condition:</b> Service Down<br>                 <b>💧 Humidity:</b> N/A%             </p>             <div style="margin-top: 15px;">                 <a href="https://www.google.com/maps/dir//22.1953,92.2195"                     target="_blank"                     style="display: block; background: #228B22; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none; margin-bottom: 8px;">                    🚗 Get Directions                 </a>                 <a href="https://www.google.com/maps/search/hotels+in+Bandarban"                     target="_blank"                     style="display: block; background: #FF4500; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none; margin-bottom: 8px;">                    🏨 Find Hotels                 </a>                 <a href="https://www.google.com/maps/search/hospitals+in+Bandarban"                     target="_blank"                     style="display: block; background: #DC143C; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none;">                    ⚕️ Emergency Services                 </a>             </div>         </div>         </div>`)[0];
+                popup_6ee9b42b6a39cfc1ead68298839defe7.setContent(html_845acbe0d176ce6ef08249f0cc692f72);
+            
+        
+
+        marker_4701e14993a880cce936c9bd85ba0b6b.bindPopup(popup_6ee9b42b6a39cfc1ead68298839defe7)
+        ;
+
+        
+    
+    
+            var marker_ab78ad1cc9b5711ade26e5341a14e74f = L.marker(
+                [23.1193, 91.9848],
+                {
+}
+            ).addTo(map_7009294e6e7b9f4cfe0aa114739dbb66);
+        
+    
+            var icon_3ddb336430f6996650ae1fe7b38ba2ce = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+            marker_ab78ad1cc9b5711ade26e5341a14e74f.setIcon(icon_3ddb336430f6996650ae1fe7b38ba2ce);
+        
+    
+        var popup_0c02b8e56f1838492bda69ffa9d4b092 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_5e088a7c9c451cebf7de798c03db463c = $(`<div id="html_5e088a7c9c451cebf7de798c03db463c" style="width: 100.0%; height: 100.0%;">         <div style="width: 260px; padding: 8px;">             <h3 style="color: #1E90FF; margin: 0 0 8px 0; font-size: 18px;">Khagrachari</h3>             <div style="border-bottom: 2px solid #eee; margin-bottom: 10px;"></div>             <p style="margin: 5px 0;">                 <b>📊 Visitors:</b> 1,800<br>                 <b>🌡️ Temperature:</b> N/A°C<br>                 <b>⛅ Condition:</b> Service Down<br>                 <b>💧 Humidity:</b> N/A%             </p>             <div style="margin-top: 15px;">                 <a href="https://www.google.com/maps/dir//23.1193,91.9848"                     target="_blank"                     style="display: block; background: #228B22; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none; margin-bottom: 8px;">                    🚗 Get Directions                 </a>                 <a href="https://www.google.com/maps/search/hotels+in+Khagrachari"                     target="_blank"                     style="display: block; background: #FF4500; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none; margin-bottom: 8px;">                    🏨 Find Hotels                 </a>                 <a href="https://www.google.com/maps/search/hospitals+in+Khagrachari"                     target="_blank"                     style="display: block; background: #DC143C; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none;">                    ⚕️ Emergency Services                 </a>             </div>         </div>         </div>`)[0];
+                popup_0c02b8e56f1838492bda69ffa9d4b092.setContent(html_5e088a7c9c451cebf7de798c03db463c);
+            
+        
+
+        marker_ab78ad1cc9b5711ade26e5341a14e74f.bindPopup(popup_0c02b8e56f1838492bda69ffa9d4b092)
+        ;
+
+        
+    
+    
+            var marker_8b481dfc66bedfe5f51b1bd29f8dd0f8 = L.marker(
+                [22.6287, 92.1812],
+                {
+}
+            ).addTo(map_7009294e6e7b9f4cfe0aa114739dbb66);
+        
+    
+            var icon_bd3141c6a72802f677f0b01046092cc3 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+            marker_8b481dfc66bedfe5f51b1bd29f8dd0f8.setIcon(icon_bd3141c6a72802f677f0b01046092cc3);
+        
+    
+        var popup_134aaf7a81e9e5023212dd069db20221 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_4571dc7f5c2b6f826bfeff9ec2624011 = $(`<div id="html_4571dc7f5c2b6f826bfeff9ec2624011" style="width: 100.0%; height: 100.0%;">         <div style="width: 260px; padding: 8px;">             <h3 style="color: #1E90FF; margin: 0 0 8px 0; font-size: 18px;">Rangamati</h3>             <div style="border-bottom: 2px solid #eee; margin-bottom: 10px;"></div>             <p style="margin: 5px 0;">                 <b>📊 Visitors:</b> 2,100<br>                 <b>🌡️ Temperature:</b> N/A°C<br>                 <b>⛅ Condition:</b> Service Down<br>                 <b>💧 Humidity:</b> N/A%             </p>             <div style="margin-top: 15px;">                 <a href="https://www.google.com/maps/dir//22.6287,92.1812"                     target="_blank"                     style="display: block; background: #228B22; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none; margin-bottom: 8px;">                    🚗 Get Directions                 </a>                 <a href="https://www.google.com/maps/search/hotels+in+Rangamati"                     target="_blank"                     style="display: block; background: #FF4500; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none; margin-bottom: 8px;">                    🏨 Find Hotels                 </a>                 <a href="https://www.google.com/maps/search/hospitals+in+Rangamati"                     target="_blank"                     style="display: block; background: #DC143C; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none;">                    ⚕️ Emergency Services                 </a>             </div>         </div>         </div>`)[0];
+                popup_134aaf7a81e9e5023212dd069db20221.setContent(html_4571dc7f5c2b6f826bfeff9ec2624011);
+            
+        
+
+        marker_8b481dfc66bedfe5f51b1bd29f8dd0f8.bindPopup(popup_134aaf7a81e9e5023212dd069db20221)
+        ;
+
+        
+    
+    
+            var marker_e064fb7dcdf2080ac3c6e57b5578f330 = L.marker(
+                [24.8949, 91.8687],
+                {
+}
+            ).addTo(map_7009294e6e7b9f4cfe0aa114739dbb66);
+        
+    
+            var icon_9a4b2e274059290e8eaa9e32e7dcea24 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+            marker_e064fb7dcdf2080ac3c6e57b5578f330.setIcon(icon_9a4b2e274059290e8eaa9e32e7dcea24);
+        
+    
+        var popup_c7c09529ad40e33b5dd54cb98a06806f = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_9d61ec65e02bb916ee6bca7c43b36bdb = $(`<div id="html_9d61ec65e02bb916ee6bca7c43b36bdb" style="width: 100.0%; height: 100.0%;">         <div style="width: 260px; padding: 8px;">             <h3 style="color: #1E90FF; margin: 0 0 8px 0; font-size: 18px;">Sylhet</h3>             <div style="border-bottom: 2px solid #eee; margin-bottom: 10px;"></div>             <p style="margin: 5px 0;">                 <b>📊 Visitors:</b> 4,700<br>                 <b>🌡️ Temperature:</b> N/A°C<br>                 <b>⛅ Condition:</b> Service Down<br>                 <b>💧 Humidity:</b> N/A%             </p>             <div style="margin-top: 15px;">                 <a href="https://www.google.com/maps/dir//24.8949,91.8687"                     target="_blank"                     style="display: block; background: #228B22; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none; margin-bottom: 8px;">                    🚗 Get Directions                 </a>                 <a href="https://www.google.com/maps/search/hotels+in+Sylhet"                     target="_blank"                     style="display: block; background: #FF4500; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none; margin-bottom: 8px;">                    🏨 Find Hotels                 </a>                 <a href="https://www.google.com/maps/search/hospitals+in+Sylhet"                     target="_blank"                     style="display: block; background: #DC143C; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none;">                    ⚕️ Emergency Services                 </a>             </div>         </div>         </div>`)[0];
+                popup_c7c09529ad40e33b5dd54cb98a06806f.setContent(html_9d61ec65e02bb916ee6bca7c43b36bdb);
+            
+        
+
+        marker_e064fb7dcdf2080ac3c6e57b5578f330.bindPopup(popup_c7c09529ad40e33b5dd54cb98a06806f)
+        ;
+
+        
+    
+    
+            var marker_42f44df52386b41d6bc4b3d57df10abe = L.marker(
+                [21.8168, 89.5582],
+                {
+}
+            ).addTo(map_7009294e6e7b9f4cfe0aa114739dbb66);
+        
+    
+            var icon_f5bc5ffda84f987485f97681b50b5493 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+            marker_42f44df52386b41d6bc4b3d57df10abe.setIcon(icon_f5bc5ffda84f987485f97681b50b5493);
+        
+    
+        var popup_f12da5d2115c19469342488031b0f232 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_4ee65b3df2c40d48a0cfb3e2d506a46a = $(`<div id="html_4ee65b3df2c40d48a0cfb3e2d506a46a" style="width: 100.0%; height: 100.0%;">         <div style="width: 260px; padding: 8px;">             <h3 style="color: #1E90FF; margin: 0 0 8px 0; font-size: 18px;">Kuakata</h3>             <div style="border-bottom: 2px solid #eee; margin-bottom: 10px;"></div>             <p style="margin: 5px 0;">                 <b>📊 Visitors:</b> 1,500<br>                 <b>🌡️ Temperature:</b> N/A°C<br>                 <b>⛅ Condition:</b> Service Down<br>                 <b>💧 Humidity:</b> N/A%             </p>             <div style="margin-top: 15px;">                 <a href="https://www.google.com/maps/dir//21.8168,89.5582"                     target="_blank"                     style="display: block; background: #228B22; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none; margin-bottom: 8px;">                    🚗 Get Directions                 </a>                 <a href="https://www.google.com/maps/search/hotels+in+Kuakata"                     target="_blank"                     style="display: block; background: #FF4500; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none; margin-bottom: 8px;">                    🏨 Find Hotels                 </a>                 <a href="https://www.google.com/maps/search/hospitals+in+Kuakata"                     target="_blank"                     style="display: block; background: #DC143C; color: white; padding: 8px; text-align: center; border-radius: 4px; text-decoration: none;">                    ⚕️ Emergency Services                 </a>             </div>         </div>         </div>`)[0];
+                popup_f12da5d2115c19469342488031b0f232.setContent(html_4ee65b3df2c40d48a0cfb3e2d506a46a);
+            
+        
+
+        marker_42f44df52386b41d6bc4b3d57df10abe.bindPopup(popup_f12da5d2115c19469342488031b0f232)
+        ;
+
+        
+    
+    
+            tile_layer_05f355ad2d0fd638f18985dd014aa78f.addTo(map_7009294e6e7b9f4cfe0aa114739dbb66);
+        
+    
+            tile_layer_05f355ad2d0fd638f18985dd014aa78f.addTo(map_7009294e6e7b9f4cfe0aa114739dbb66);
+        
+</script>
+</html>

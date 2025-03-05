@@ -1,0 +1,10 @@
+streamlit
+python-dotenv
+PyPDF2
+python-docx
+langchain
+chromadb
+sentence-transformers
+numpy
+ollama
+docx

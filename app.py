@@ -1,14 +1,16 @@
-import streamlit as st  # UI
-from dotenv import load_dotenv  # Load environment variables
-from PyPDF2 import PdfReader  # Read PDFs
-import docx  # Read DOCX files
-from langchain.text_splitter import CharacterTextSplitter  # Text chunking
-import chromadb  # Vector database for retrieval
-from sentence_transformers import SentenceTransformer  # Embeddings
-import numpy as np  # Handle embedding arrays
-import ollama  # LLM for answering queries
-import time  # For performance timing
-from performance_analyzer import track_query_performance, analyze_performance  # Import performance functions
+import re
+import time
+import streamlit as st
+from dotenv import load_dotenv
+from PyPDF2 import PdfReader
+import docx
+from langchain.text_splitter import CharacterTextSplitter
+import chromadb
+from sentence_transformers import SentenceTransformer
+import numpy as np
+import ollama
+from performance_analyzer import track_query_performance, analyze_performance
+from tour_budget import show_budget_calculator  # Budget Estimation page
 
 # Load environment variables
 load_dotenv()
@@ -16,7 +18,7 @@ load_dotenv()
 # Load Embedding Model
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
-# Initialize ChromaDB
+# Initialize ChromaDB client and collection
 chroma_client = chromadb.PersistentClient(path="./chroma_db")
 collection = chroma_client.get_or_create_collection(name="tourism_chatbot")
 
@@ -28,166 +30,182 @@ BASIC_RESPONSES = {
     "what is your name": "I'm your Tourism Chatbot, here to help with document-based queries!",
 }
 
-# Confidentiality filter for restricted topics
-CONFIDENTIAL_QUESTIONS = [
-    "what model are you using",
-    "what ai are you using",
-    "which llm is this",
-    "are you using deepseek",
-    "are you using gpt",
-    "are you based on openai",
-    "who built you",
-    "how were you made",
-    "who created you",
-    "tell me your code",
-    "show me your code",
-    "which framework are you using",
-]
-
-# Extract text from PDFs & DOCXs
+# ----- DOCUMENT PROCESSING FUNCTIONS -----
 def get_file_text(files):
     text = ""
+    metadata = []
     try:
         for file in files:
             if file.type == "application/pdf":
                 pdf_reader = PdfReader(file)
-                for page in pdf_reader.pages:
+                for page_num, page in enumerate(pdf_reader.pages):
                     page_text = page.extract_text()
                     if page_text:
                         text += page_text + "\n\n"
+                        metadata.append({
+                            "document_name": file.name,
+                            "page_number": page_num + 1
+                        })
             elif file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
                 doc = docx.Document(file)
-                for para in doc.paragraphs:
+                for para_num, para in enumerate(doc.paragraphs):
                     text += para.text + "\n\n"
+                    metadata.append({
+                        "document_name": file.name,
+                        "paragraph_number": para_num + 1
+                    })
     except Exception as e:
         st.error(f"Error reading files: {e}")
-    return text.strip()
+    return text.strip(), metadata
 
-# Split text into manageable chunks
-def get_text_chunks(text):
+def get_text_chunks(text, metadata):
     try:
-        text_splitter = CharacterTextSplitter(
+        splitter = CharacterTextSplitter(
             separator="\n\n",
-            chunk_size=500,  
+            chunk_size=500,
             chunk_overlap=100,
             length_function=len
         )
-        return text_splitter.split_text(text)
+        chunks = splitter.split_text(text)
+        chunk_metadata = []
+        for i, chunk in enumerate(chunks):
+            meta = metadata[i % len(metadata)] if metadata else {}
+            chunk_metadata.append((chunk, meta))
+        return chunk_metadata
     except Exception as e:
         st.error(f"Error splitting text: {e}")
         return []
 
-# Generate embeddings for text chunks
 def generate_embeddings(chunks):
     try:
-        return embedding_model.encode(chunks, convert_to_numpy=True).tolist()
+        texts = [chunk[0] for chunk in chunks]
+        return embedding_model.encode(texts, convert_to_numpy=True).tolist()
     except Exception as e:
         st.error(f"Error generating embeddings: {e}")
         return []
 
-# Store chunks in ChromaDB
 def store_chunks_in_chromadb(chunks):
     try:
         stored_docs = collection.get(include=["documents"]).get("documents", [])
-        new_chunks = [chunk for chunk in chunks if chunk not in stored_docs]
-
+        new_chunks = [chunk for chunk in chunks if chunk[0] not in stored_docs]
         if not new_chunks:
             st.info("No new data to store.")
             return
-
         embeddings = generate_embeddings(new_chunks)
-        for i, (chunk, embedding) in enumerate(zip(new_chunks, embeddings)):
+        for i, (chunk, meta) in enumerate(new_chunks):
             collection.add(
-                ids=[f"chunk_{i}_{hash(chunk)}"],  # Unique ID
-                documents=[chunk],  # Store text
-                embeddings=[embedding]  # Store vector
+                ids=[f"chunk_{i}_{hash(chunk)}"],
+                documents=[chunk],
+                embeddings=[embeddings[i]],
+                metadatas=[meta]  # Storing metadata correctly
             )
     except Exception as e:
         st.error(f"Error storing chunks in ChromaDB: {e}")
 
-# Retrieve relevant text chunks from ChromaDB
 def query_chromadb(query):
     try:
         if collection.count() == 0:
-            return []  # Prevent errors if database is empty
-
+            return []
         query_embedding = embedding_model.encode([query]).tolist()[0]
         results = collection.query(query_embeddings=[query_embedding], n_results=5)
-        return results.get("documents", [[]])[0]
+
+        # Extract document text and metadata correctly
+        docs = results.get("documents", [])
+        metas = results.get("metadatas", [])
+
+        return [(doc, meta) for doc, meta in zip(docs, metas)]
     except Exception as e:
         st.error(f"Error querying ChromaDB: {e}")
         return []
 
-# Query DeepSeek R1 for responses
+# ----- CHATBOT FUNCTIONS -----
 def query_ollama(prompt):
-    start_time = time.time()  # Start timing the response
+    start_time = time.time()
     success = False
     error_occurred = False
-
     try:
         response = ollama.chat(model="deepseek-r1:1.5b", messages=[{"role": "user", "content": prompt}])
         success = True
-        response_time = time.time() - start_time  # Calculate response time
-        track_query_performance(start_time, success, error_occurred)  # Track performance data
-        return response["message"]["content"]
+        track_query_performance(start_time, success, error_occurred)
+        reply = response["message"]["content"]
+        # Force response in English
+        reply = re.sub(r'<think>.*?</think>', '', reply, flags=re.DOTALL).strip()
+        return reply
     except Exception as e:
         error_occurred = True
-        track_query_performance(start_time, success, error_occurred)  # Track performance data
+        track_query_performance(start_time, success, error_occurred)
         st.error(f"Error querying LLM: {e}")
         return "I'm sorry, but I couldn't generate a response."
 
-# Main Streamlit App
-def main():
-    st.set_page_config(page_title="Regional Tourism Chatbot", page_icon="🌍")
-
-    st.header("REGIONAL TOURISM CHATBOT ")
+def chatbot_page():
+    st.header("Regional Tourism Chatbot")
     st.markdown("[🌍 Click to View Regional Tourism Guide Map](https://arnob4762.github.io/tour-guide/)")
-
     user_input = st.text_input("Ask a question about your documents:")
-
+    
     if user_input:
         lower_input = user_input.lower().strip()
-
-        # Confidentiality filter
-        if any(q in lower_input for q in CONFIDENTIAL_QUESTIONS):
-            st.write("Sorry, that's confidential. I cannot disclose that.")
-            return
-        
-        # Check for basic conversational responses
         if lower_input in BASIC_RESPONSES:
             st.write(BASIC_RESPONSES[lower_input])
         else:
             relevant_chunks = query_chromadb(user_input)
-            
             if relevant_chunks:
-                context = "\n".join(relevant_chunks)
+                context = "\n".join([str(doc) for doc, _ in relevant_chunks])
             else:
                 st.warning("No relevant data found. The chatbot may give a generic response.")
                 context = "No relevant data found."
-
-            prompt = f"Context:\n{context}\n\nUser Question: {user_input}"
+            
+            prompt = f"Context:\n{context}\n\nUser Question (in English only): {user_input}\nAnswer in English only:"
             response = query_ollama(prompt)
-
-            # If response is too generic, give a fallback response
+            
             if "no relevant data found" in context.lower():
                 response = "Sorry, I can only assist with information related to your uploaded documents."
-
             st.write(response)
+            
+            # Display document references at the end, if available
+            if relevant_chunks:
+                st.markdown("#### Document References")
+                for doc, meta in relevant_chunks:
+                    if isinstance(meta, dict):
+                        doc_name = meta.get("document_name", None)
+                        page = meta.get("page_number", None)
+                        paragraph = meta.get("paragraph_number", None)
+                        
+                        ref_title = f"Document: {doc_name or 'Unknown'}"
+                        if page:
+                            ref_title += f" | Page: {page}"
+                        if paragraph:
+                            ref_title += f" | Paragraph: {paragraph}"
+                        
+                        with st.expander(ref_title):
+                            st.write(doc)
 
-    with st.sidebar:
-        st.subheader("📂 Upload Your Documents")
-        uploaded_files = st.file_uploader("Upload PDFs & DOCs", accept_multiple_files=True)
+    st.subheader("Upload Your Documents")
+    uploaded_files = st.file_uploader("Upload PDFs & DOCs", accept_multiple_files=True)
+    
+    if st.button("Process") and uploaded_files:
+        raw_text, metadata = get_file_text(uploaded_files)
+        if raw_text:
+            text_chunks = get_text_chunks(raw_text, metadata)
+            store_chunks_in_chromadb(text_chunks)
+            st.success("✅ Processing complete! Documents are now searchable.")
 
-        if st.button("Process") and uploaded_files:
-            raw_text = get_file_text(uploaded_files)
-            if raw_text:
-                text_chunks = get_text_chunks(raw_text)
-                store_chunks_in_chromadb(text_chunks)
-                st.success("✅ Processing complete! Documents are now searchable.")
+# ----- PERFORMANCE ANALYSIS PAGE -----
+def performance_page():
+    st.header("Performance Analysis")
+    st.markdown("Below are the performance metrics of your chatbot:")
+    analyze_performance()
 
-        st.subheader("🔍 Performance Analyzer")
-        if st.button("Analyze Performance"):
-            analyze_performance()
+# ----- MAIN APP -----
+def main():
+    st.sidebar.title("Navigation")
+    page = st.sidebar.radio("Go to", ["Chatbot", "Budget Estimation", "Performance Analysis"])
+    
+    if page == "Chatbot":
+        chatbot_page()
+    elif page == "Budget Estimation":
+        show_budget_calculator()
+    elif page == "Performance Analysis":
+        performance_page()
 
 if __name__ == "__main__":
     main()

@@ -6,24 +6,19 @@ import time
 print("Installing requirements...")
 subprocess.run(["pip", "install", "-r", "requirements.txt"])
 
-# Step 2: Install and configure ngrok
-print("Setting up ngrok...")
-subprocess.run(["pip", "install", "pyngrok"])
-from pyngrok import ngrok
+# Step 2: Install Gradio
+print("Setting up Gradio...")
+subprocess.run(["pip", "install", "gradio"])
 
-# Set your ngrok auth token directly here
-NGROK_AUTH_TOKEN = "2u8OrgSVoCMb3qCS2D6aaKjrRZf_63NcpbjYCzguKgDHqS8Ys"
-ngrok.set_auth_token(NGROK_AUTH_TOKEN)
+# Step 3: Launch Gradio app
+print("Launching Gradio app...")
 
-# Step 3: Start Streamlit app with ngrok tunnel
-print("Launching Streamlit app with ngrok tunnel...")
-public_url = ngrok.connect(8501)
-print(f"🌐 Your app is live at: {public_url}")
+# Ensure app.py is the name of your Gradio script, or adjust accordingly
+import app  # Assuming your Gradio app is in a file named `app.py`
+app.launch(share=True)  # Gradio's share=True will create a public link for the app
 
-# Step 4: Run Streamlit app
-subprocess.Popen(["streamlit", "run", "app.py"])
-
-# Step 5: Keep the tunnel alive
+# Step 4: Keep the app running (Colab may stop execution otherwise)
 while True:
     time.sleep(60)
+
 

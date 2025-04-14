@@ -1,40 +1,69 @@
-# Travelmate BD – Regional Tourism Chatbot
+# **🌍 Travelmate BD – Regional Tourism Chatbot**
 
-Welcome to **Travelmate BD**, a smart regional tourism chatbot designed as part of the CSE299 Junior Design Project at BRAC University.
+**Regional Tourism Chatbot** is an AI-powered chatbot designed to assist users in planning and exploring regional tours across Bangladesh. Developed as part of the "CSE 299 – Junior Design Project (Spring 2025, Section 19)" at North South University, this web-based application leverages natural language processing to deliver destination guidance, budget estimation, and document-based question answering — all through a user-friendly interface built with **Streamlit** and deployed via **Google Colab** using **ngrok**.
+
+---
 
 ## 📌 Project Overview
-This chatbot assists users in planning their trips by:
-- Providing information about Bangladeshi tourist destinations
-- Answering questions using uploaded documents
-- Calculating personalized travel budgets
-- Displaying helpful tools like maps and performance insights
 
-Built using:
-- 🧠 DeepSeek R1 7B model via Hugging Face
-- 🧮 LangChain + ChromaDB for local document QA
-- 🧾 Streamlit for user interface
-- 📊 Budget & performance calculators
+- **Project Title**: Travelmate BD – Regional Tourism Chatbot  
+- **Course**: CSE 299 – Junior Design Project (Spring 2025)  
+- **Section**: 19  
+- **Supervisor**: Dr. Shafin Rahman  
+- **Group Number**: 2  
 
----
-
-## 🚀 Features
-- 🧳 **Tour Budget Calculator** – Get estimated costs based on transport, hotel, food, and trip length.
-- 🧠 **Chatbot (LLM)** – Powered by DeepSeek R1 7B, gives human-like responses.
-- 📑 **Document QA** – Upload a PDF/DOCX and ask questions from it.
-- 📈 **Performance Analyzer** – Measures response accuracy and latency.
-- 🗺️ **Tour Map** – Visual map of popular destinations (via iframe).
+**Team Members**:
+- Azmain Iqtidar Arnob 
+- Md Nayeem Porag Molla  
+- Atikul Islam Nahid  
+- Md Ashraful Islam
 
 ---
 
-## ⚙️ Installation (Locally or Colab)
+## ⚙️ Key Features
 
-### Option 1: Google Colab + Ngrok (Recommended for easy hosting)
-1. Open the repo in Colab.
-2. Run this setup:
+- **AI Chatbot**: Travel-focused Q&A using `deepseek-ai/deepseek-llm-7b-base` from Hugging Face.
+- **Document QA**: Context-aware answers from uploaded PDF or DOCX files.
+- **Tour Budget Calculator**: Estimates costs for transportation, accommodation, and more.
+- **Performance Analyzer**: Monitors memory and response time in real time.
+- **Web-Based Interface**: Runs seamlessly on Google Colab with public access via ngrok.
+
+---
+
+## 🚀 How to Run (Google Colab Only)
+
+1. Open a new Google Colab notebook.
+2. Clone the repository:
    ```python
-   !pip install -r requirements.txt
-   !pip install pyngrok
-   from pyngrok import ngrok
-   public_url = ngrok.connect(8501)
-   !streamlit run app.py & npx localtunnel --port 8501
-   print(f"App running at: {public_url}")
+   !git clone https://github.com/Arnob4762/CSE299-PROJECT-Travelmate-BD---Regional-Tourism-Chatbot-
+   %cd CSE299-PROJECT-Travelmate-BD---Regional-Tourism-Chatbot-
+   ```
+3. Run the setup script:
+   ```python
+   !python colab_setup.py
+   ```
+4. After initialization, an **ngrok URL** will be displayed. Click the URL to access the chatbot in your browser.
+
+---
+
+## 🛠 Technologies Used
+
+- Python  
+- Streamlit  
+- Hugging Face Transformers  
+- ChromaDB  
+- Google Colab  
+- Ngrok  
+- PyPDF2, python-docx  
+- psutil
+
+---
+
+## 📄 License & Acknowledgements
+
+This project is intended for educational purposes only.  
+We gratefully acknowledge the guidance of **Dr. Shafin Rahman** 
+
+---
+
+```

@@ -23,17 +23,15 @@ def load_embedding_model():
 
 embedding_model = load_embedding_model()
 
-# Load the Falcon-7B-Instruct model from Hugging Face
+# Cache and load the Falcon-7B-Instruct model from Hugging Face
 @st.cache_resource(show_spinner=False)
 def load_hf_model():
-    token = os.environ.get("HUGGINGFACE_TOKEN")  # optional if you have it
-
+    token = os.environ.get("HUGGINGFACE_TOKEN")  # Read the token from the environment
     tokenizer = AutoTokenizer.from_pretrained(
         "tiiuae/falcon-7b-instruct",
         token=token,
         trust_remote_code=True
     )
-
     model = AutoModelForCausalLM.from_pretrained(
         "tiiuae/falcon-7b-instruct",
         token=token,
@@ -41,7 +39,7 @@ def load_hf_model():
         torch_dtype=torch.float16,
         device_map="auto"
     )
-
+    # Note: Do not pass 'device' here. The model will be on the proper device automatically.
     return pipeline("text-generation", model=model, tokenizer=tokenizer)
 
 hf_pipeline = load_hf_model()
@@ -50,7 +48,7 @@ hf_pipeline = load_hf_model()
 chroma_client = chromadb.PersistentClient(path="./chroma_db")
 collection = chroma_client.get_or_create_collection(name="tourism_chatbot")
 
-# Small talk
+# Small talk predefined responses
 BASIC_RESPONSES = {
     "hi": "Hello! How can I assist you?",
     "hello": "Hi there! Ask me anything related to your uploaded documents.",
@@ -58,7 +56,7 @@ BASIC_RESPONSES = {
     "what is your name": "I'm your Tourism Chatbot, here to help with document-based queries!",
 }
 
-# -------- File Processing --------
+# -------- File Processing Functions --------
 def get_file_text(files):
     text, metadata = "", []
     try:
@@ -168,8 +166,12 @@ def chatbot_page():
                 "Please think carefully before responding. Your final answer should be helpful and grounded in the provided context."
             )
 
-            response = hf_pipeline(prompt, max_new_tokens=512, do_sample=True, temperature=0.7)[0]['generated_text']
-            st.markdown(f"<div style='font-size: 14pt; font-weight: bold;'>{response}</div>", unsafe_allow_html=True)
+            response = hf_pipeline(prompt, max_new_tokens=512, do_sample=True, temperature=0.7)[0]
+            if isinstance(response, dict):
+                response_text = response.get("generated_text", "[No response]")
+            else:
+                response_text = response
+            st.markdown(f"<div style='font-size: 14pt; font-weight: bold;'>{response_text}</div>", unsafe_allow_html=True)
 
     files = st.file_uploader("Upload your documents (PDF/DOCX)", type=["pdf", "docx"], accept_multiple_files=True)
     if files:

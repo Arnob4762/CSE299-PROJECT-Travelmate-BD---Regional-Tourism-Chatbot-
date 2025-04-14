@@ -2,31 +2,28 @@ import os
 import subprocess
 import time
 
-# Step 1: Clone your GitHub repo (optional if already uploaded)
-# subprocess.run(["git", "clone", "https://github.com/your-username/your-repository-name.git"])
-
-# Step 2: Install required packages
+# Step 1: Install required packages
 print("Installing requirements...")
 subprocess.run(["pip", "install", "-r", "requirements.txt"])
 
-# Step 3: Install and configure ngrok
+# Step 2: Install and configure ngrok
 print("Setting up ngrok...")
 subprocess.run(["pip", "install", "pyngrok"])
 from pyngrok import ngrok
 
-# Optional: Add your authtoken if you have one
-NGROK_AUTH_TOKEN = os.getenv("NGROK_AUTH_TOKEN", "")  # Or paste token here as string
-if NGROK_AUTH_TOKEN:
-    ngrok.set_auth_token(NGROK_AUTH_TOKEN)
+# Set your ngrok auth token directly here
+NGROK_AUTH_TOKEN = "2u8OrgSVoCMb3qCS2D6aaKjrRZf_63NcpbjYCzguKgDHqS8Ys"
+ngrok.set_auth_token(NGROK_AUTH_TOKEN)
 
-# Step 4: Start Streamlit app with ngrok tunnel
+# Step 3: Start Streamlit app with ngrok tunnel
 print("Launching Streamlit app with ngrok tunnel...")
 public_url = ngrok.connect(8501)
-print(f"Public URL: {public_url}")
+print(f"🌐 Your app is live at: {public_url}")
 
-# Step 5: Run Streamlit app
+# Step 4: Run Streamlit app
 subprocess.Popen(["streamlit", "run", "app.py"])
 
-# Keep the notebook alive to maintain the tunnel
+# Step 5: Keep the tunnel alive
 while True:
     time.sleep(60)
+

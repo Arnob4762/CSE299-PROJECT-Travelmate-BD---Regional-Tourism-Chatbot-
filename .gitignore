@@ -1,3 +1,6 @@
+# Gradio temporary files
+.gradio/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -48,5 +51,6 @@ Thumbs.db
 # Hugging Face cache
 huggingface_cache/
 ~/.cache/huggingface/
+
 
 

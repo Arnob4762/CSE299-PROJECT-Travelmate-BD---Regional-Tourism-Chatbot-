@@ -3,39 +3,50 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Virtual environment
+# Virtual environments
 venv/
+env/
+
+# Environment variables
 .env
 *.env
 
-# Jupyter / Colab files
-.ipynb_checkpoints
+# Jupyter / Colab notebooks
+*.ipynb
+.ipynb_checkpoints/
 
-# MacOS
-.DS_Store
+# Google Drive mount point
+/content/drive/
 
-# VSCode and other editor folders
-.vscode/
-.idea/
-
-# Model and vector database files
+# Model and data files
 *.pt
 *.bin
 *.pkl
-chroma/
+*.h5
+*.ckpt
 *.db
+*.sqlite3
+*.csv
+*.tsv
+*.json
 
-# Uploads or user-generated files
-uploads/
-*.pdf
-*.docx
-*.log
-
-# Ngrok and temporary files
-ngrok*
+# Temporary and cache files
 *.tmp
+*.log
 *.bak
+*.swp
+*.swo
 
-# Ignore Hugging Face cache and other model-related files
+# IDE and editor directories
+.vscode/
+.idea/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Hugging Face cache
 huggingface_cache/
+~/.cache/huggingface/
+
 

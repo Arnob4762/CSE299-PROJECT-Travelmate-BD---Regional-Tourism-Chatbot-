@@ -42,7 +42,7 @@ def load_hf_model():
         device_map="auto"
     )
 
-    return pipeline("text-generation", model=model, tokenizer=tokenizer, device=0)
+    return pipeline("text-generation", model=model, tokenizer=tokenizer)
 
 hf_pipeline = load_hf_model()
 

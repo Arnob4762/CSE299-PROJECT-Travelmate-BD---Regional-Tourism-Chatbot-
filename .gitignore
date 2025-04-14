@@ -35,3 +35,7 @@ uploads/
 ngrok*
 *.tmp
 *.bak
+
+# Ignore Hugging Face cache and other model-related files
+huggingface_cache/
+

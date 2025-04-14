@@ -1,0 +1,37 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env
+*.env
+
+# Jupyter / Colab files
+.ipynb_checkpoints
+
+# MacOS
+.DS_Store
+
+# VSCode and other editor folders
+.vscode/
+.idea/
+
+# Model and vector database files
+*.pt
+*.bin
+*.pkl
+chroma/
+*.db
+
+# Uploads or user-generated files
+uploads/
+*.pdf
+*.docx
+*.log
+
+# Ngrok and temporary files
+ngrok*
+*.tmp
+*.bak

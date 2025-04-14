@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
 """
-Tour Budget Calculator
+Tour Budget Calculator (Gradio)
 This module allows the user to choose a destination, transportation mode, hotel category, and restaurant category,
 enter trip details (days, nights, season), and then calculates the estimated total budget with a detailed memo.
 All data is hardcoded based on the provided travel budget information.
 """
 
-import streamlit as st
+import gradio as gr
 
+# Function to get average from cost range
 def get_average_cost(cost_range):
-    """Return the average of the given cost range dictionary (with keys 'min' and 'max')."""
     return (cost_range["min"] + cost_range["max"]) / 2
 
-def show_budget_calculator():
-    st.subheader("Tour Budget Calculator")
-    
-    # Hardcoded destination data
-    destinations = {
+# Define destination data
+destinations = {
         "Cox's Bazar": {
             "hotels": {
                 "Luxury": {
@@ -324,74 +321,82 @@ def show_budget_calculator():
             }
         }
     }
-    
-    # Season multipliers
-    season_multiplier = {
-        "Off-Season": 0.9,
-        "On-Season": 1.2
-    }
-    
-    # Input Section using Streamlit widgets
-    destination_list = list(destinations.keys())
-    destination = st.selectbox("Select Destination:", destination_list)
-    
-    trans_options = list(destinations[destination]["transport"].keys())
-    transport_selected = st.selectbox(f"Select Transportation Option for {destination}:", trans_options)
-    
-    hotel_options = list(destinations[destination]["hotels"].keys())
-    hotel_selected = st.selectbox(f"Select Hotel Category for {destination}:", hotel_options)
-    
-    rest_options = list(destinations[destination]["restaurants"].keys())
-    restaurant_selected = st.selectbox(f"Select Restaurant Category for {destination}:", rest_options)
-    
-    days = st.number_input("Enter the number of days for your trip:", min_value=1, step=1, value=1)
-    nights = st.number_input("Enter the number of hotel nights:", min_value=1, step=1, value=1)
-    meals_per_day = 3  # Assuming 3 meals per day
-    
-    season_options = list(season_multiplier.keys())
-    season_selected = st.selectbox("Select Season:", season_options)
+
+# Season multipliers
+season_multiplier = {
+    "Off-Season": 0.9,
+    "On-Season": 1.2
+}
+
+# Main calculator logic
+def calculate_budget(destination, transport_selected, hotel_selected, restaurant_selected, days, nights, season_selected):
     season_factor = season_multiplier[season_selected]
-    
-    # Calculation Section
+    meals_per_day = 3
+
     trans_range = destinations[destination]["transport"][transport_selected]
     transport_cost = get_average_cost(trans_range)
-    
+
     hotel_range = destinations[destination]["hotels"][hotel_selected]
     hotel_cost_per_night = get_average_cost(hotel_range)
     hotel_cost = hotel_cost_per_night * nights
-    
+
     rest_range = destinations[destination]["restaurants"][restaurant_selected]
     restaurant_cost_per_meal = get_average_cost(rest_range)
     meal_cost = restaurant_cost_per_meal * meals_per_day * days
-    
+
     base_total = transport_cost + hotel_cost + meal_cost
     total_cost = base_total * season_factor
-    
+
     memo = f"""
-    ========== TOUR BUDGET SUMMARY ==========
-    Destination: {destination}
-    Season: {season_selected} (Multiplier: {season_factor})
-    Trip Duration: {days} days, {nights} hotel nights
+========== TOUR BUDGET SUMMARY ==========
+Destination: {destination}
+Season: {season_selected} (Multiplier: {season_factor})
+Trip Duration: {days} days, {nights} hotel nights
 
-    **Transportation:** {transport_selected}
-      - Average Cost: BDT {transport_cost:.2f}
+**Transportation:** {transport_selected}
+  - Average Cost: BDT {transport_cost:.2f}
 
-    **Hotel:** {hotel_selected}
-      - Average Cost per Night: BDT {hotel_cost_per_night:.2f}
-      - Total Hotel Cost for {nights} nights: BDT {hotel_cost:.2f}
-      - Examples: {', '.join(hotel_range['examples'])}
+**Hotel:** {hotel_selected}
+  - Average Cost per Night: BDT {hotel_cost_per_night:.2f}
+  - Total Hotel Cost for {nights} nights: BDT {hotel_cost:.2f}
+  - Examples: {', '.join(hotel_range['examples'])}
 
-    **Restaurant:** {restaurant_selected}
-      - Average Cost per Meal: BDT {restaurant_cost_per_meal:.2f}
-      - Total Meal Cost for {days} days (3 meals/day): BDT {meal_cost:.2f}
-      - Examples: {', '.join(rest_range['examples'])}
+**Restaurant:** {restaurant_selected}
+  - Average Cost per Meal: BDT {restaurant_cost_per_meal:.2f}
+  - Total Meal Cost for {days} days (3 meals/day): BDT {meal_cost:.2f}
+  - Examples: {', '.join(rest_range['examples'])}
 
-    **Base Total Cost:** BDT {base_total:.2f}
-    **Total Estimated Budget (after season adjustment):** BDT {total_cost:.2f}
-    ===========================================
-    """
-    
-    st.markdown(memo)
-    
+**Base Total Cost:** BDT {base_total:.2f}
+**Total Estimated Budget (after season adjustment):** BDT {total_cost:.2f}
+===========================================
+"""
+    return memo
+
+# Dynamic input updater
+def update_options(destination):
+    return (
+        list(destinations[destination]["transport"].keys()),
+        list(destinations[destination]["hotels"].keys()),
+        list(destinations[destination]["restaurants"].keys())
+    )
+
+with gr.Blocks() as demo:
+    gr.Markdown("## Tour Budget Calculator")
+
+    destination = gr.Dropdown(label="Select Destination", choices=list(destinations.keys()))
+    transport = gr.Dropdown(label="Select Transportation Option")
+    hotel = gr.Dropdown(label="Select Hotel Category")
+    restaurant = gr.Dropdown(label="Select Restaurant Category")
+    days = gr.Number(label="Number of Days", value=1, precision=0, minimum=1)
+    nights = gr.Number(label="Number of Hotel Nights", value=1, precision=0, minimum=1)
+    season = gr.Dropdown(label="Select Season", choices=list(season_multiplier.keys()), value="Off-Season")
+
+    destination.change(fn=update_options, inputs=destination, outputs=[transport, hotel, restaurant])
+
+    calc_btn = gr.Button("Calculate Budget")
+    output = gr.Textbox(label="Tour Budget Summary", lines=25)
+
+    calc_btn.click(fn=calculate_budget, inputs=[destination, transport, hotel, restaurant, days, nights, season], outputs=output)
+
 if __name__ == "__main__":
-    show_budget_calculator()
+    demo.launch()

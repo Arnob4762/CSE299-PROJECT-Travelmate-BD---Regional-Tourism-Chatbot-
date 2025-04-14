@@ -15,10 +15,13 @@ print("Launching Gradio app...")
 
 # Ensure app.py is the name of your Gradio script, or adjust accordingly
 import app  # Assuming your Gradio app is in a file named `app.py`
-app.launch(share=True)  # Gradio's share=True will create a public link for the app
+
+# This will launch the app with a public URL
+app.demo.launch(share=True)
 
 # Step 4: Keep the app running (Colab may stop execution otherwise)
 while True:
     time.sleep(60)
+
 
 

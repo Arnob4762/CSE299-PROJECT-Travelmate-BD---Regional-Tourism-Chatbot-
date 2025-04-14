@@ -1,4 +1,4 @@
-import streamlit as st
+import gradio as gr
 import time
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
@@ -16,33 +16,24 @@ import os
 # Load environment variables
 load_dotenv()
 
-# Cache and load the embedding model
-@st.cache_resource(show_spinner=False)
-def load_embedding_model():
-    return SentenceTransformer("all-MiniLM-L6-v2")
+# Load embedding model
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
-embedding_model = load_embedding_model()
-
-# Cache and load the Falcon-7B-Instruct model from Hugging Face
-@st.cache_resource(show_spinner=False)
-def load_hf_model():
-    token = os.environ.get("HUGGINGFACE_TOKEN")  # Read the token from the environment
-    tokenizer = AutoTokenizer.from_pretrained(
-        "tiiuae/falcon-7b-instruct",
-        token=token,
-        trust_remote_code=True
-    )
-    model = AutoModelForCausalLM.from_pretrained(
-        "tiiuae/falcon-7b-instruct",
-        token=token,
-        trust_remote_code=True,
-        torch_dtype=torch.float16,
-        device_map="auto"
-    )
-    # Note: Do not pass 'device' here. The model will be on the proper device automatically.
-    return pipeline("text-generation", model=model, tokenizer=tokenizer)
-
-hf_pipeline = load_hf_model()
+# Load Hugging Face model pipeline
+token = os.environ.get("HUGGINGFACE_TOKEN")
+tokenizer = AutoTokenizer.from_pretrained(
+    "tiiuae/falcon-7b-instruct",
+    token=token,
+    trust_remote_code=True
+)
+model = AutoModelForCausalLM.from_pretrained(
+    "tiiuae/falcon-7b-instruct",
+    token=token,
+    trust_remote_code=True,
+    torch_dtype=torch.float16,
+    device_map="auto"
+)
+hf_pipeline = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
 # Initialize ChromaDB
 chroma_client = chromadb.PersistentClient(path="./chroma_db")
@@ -56,63 +47,52 @@ BASIC_RESPONSES = {
     "what is your name": "I'm your Tourism Chatbot, here to help with document-based queries!",
 }
 
-# -------- File Processing Functions --------
+# File processing
+
 def get_file_text(files):
     text, metadata = "", []
     try:
         for file in files:
-            if file.type == "application/pdf":
+            if file.name.endswith(".pdf"):
                 reader = PdfReader(file)
                 for i, page in enumerate(reader.pages):
                     content = page.extract_text()
                     if content:
                         text += content + "\n\n"
                         metadata.append({"document_name": file.name, "page_number": i + 1})
-            elif file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+            elif file.name.endswith(".docx"):
                 doc = docx.Document(file)
                 for i, para in enumerate(doc.paragraphs):
                     text += para.text + "\n\n"
                     metadata.append({"document_name": file.name, "paragraph_number": i + 1})
     except Exception as e:
-        st.error(f"Error reading files: {e}")
-        st.text(traceback.format_exc())
+        print(f"Error reading files: {e}")
+        print(traceback.format_exc())
     return text.strip(), metadata
 
 def get_text_chunks(text, metadata):
-    try:
-        splitter = CharacterTextSplitter(separator="\n\n", chunk_size=500, chunk_overlap=100)
-        chunks = splitter.split_text(text)
-        chunk_metadata = [metadata[i % len(metadata)] for i in range(len(chunks))]
-        return list(zip(chunks, chunk_metadata))
-    except Exception as e:
-        st.error(f"Error splitting text: {e}")
-        return []
+    splitter = CharacterTextSplitter(separator="\n\n", chunk_size=500, chunk_overlap=100)
+    chunks = splitter.split_text(text)
+    chunk_metadata = [metadata[i % len(metadata)] for i in range(len(chunks))]
+    return list(zip(chunks, chunk_metadata))
 
 def generate_embeddings(chunks):
-    try:
-        return embedding_model.encode([chunk[0] for chunk in chunks], convert_to_numpy=True).tolist()
-    except Exception as e:
-        st.error(f"Error generating embeddings: {e}")
-        return []
+    return embedding_model.encode([chunk[0] for chunk in chunks], convert_to_numpy=True).tolist()
 
 def store_chunks_in_chromadb(chunks):
-    try:
-        stored_docs = collection.get(include=["documents"]).get("documents", [])
-        new_chunks = [chunk for chunk in chunks if chunk[0] not in stored_docs]
-        if not new_chunks:
-            st.info("No new data to store.")
-            return
-        embeddings = generate_embeddings(new_chunks)
-        for i, (chunk, meta) in enumerate(new_chunks):
-            collection.add(
-                ids=[f"chunk_{i}_{hash(chunk)}"],
-                documents=[chunk],
-                embeddings=[embeddings[i]],
-                metadatas=[meta]
-            )
-    except Exception as e:
-        st.error(f"Error storing chunks: {e}")
-        st.text(traceback.format_exc())
+    stored_docs = collection.get(include=["documents"]).get("documents", [])
+    new_chunks = [chunk for chunk in chunks if chunk[0] not in stored_docs]
+    if not new_chunks:
+        return "No new data to store."
+    embeddings = generate_embeddings(new_chunks)
+    for i, (chunk, meta) in enumerate(new_chunks):
+        collection.add(
+            ids=[f"chunk_{i}_{hash(chunk)}"],
+            documents=[chunk],
+            embeddings=[embeddings[i]],
+            metadatas=[meta]
+        )
+    return "Documents uploaded and processed successfully!"
 
 def query_chromadb(query):
     start_time = time.time()
@@ -122,84 +102,82 @@ def query_chromadb(query):
         embedding = embedding_model.encode([query]).tolist()[0]
         results = collection.query(query_embeddings=[embedding], n_results=5)
         documents, metadatas = results.get("documents", []), results.get("metadatas", [])
-        st.write("References:", metadatas)
         duration = time.time() - start_time
         track_query_performance(True, duration, bool(documents))
         return list(zip(documents, metadatas))
     except Exception as e:
         track_query_performance(False, time.time() - start_time, False)
-        st.error(f"Error querying ChromaDB: {e}")
+        print(f"Error querying ChromaDB: {e}")
         return []
 
-# -------- UI Pages --------
-def show_guide_map():
-    st.header("Tour Guide Map")
-    st.markdown(
-        '<iframe src="https://arnob4762.github.io/tour-guide/" width="100%" height="600px" style="border:none;"></iframe>',
-        unsafe_allow_html=True
-    )
+# Gradio tab: Chatbot
 
-def chatbot_page():
-    st.header("Chat with Your Documents")
-    user_input = st.text_input("Ask a question about your documents:")
+def chat_with_documents(user_input, files):
+    if user_input.lower().strip() in BASIC_RESPONSES:
+        return BASIC_RESPONSES[user_input.lower().strip()]
 
-    if user_input:
-        query = user_input.lower().strip()
-        if query in BASIC_RESPONSES:
-            st.write(BASIC_RESPONSES[query])
-        else:
-            chunks = query_chromadb(user_input)
-            context = ""
-            references = []
-            for doc, meta in chunks:
-                ref = meta.get("document_name", "Unknown")
-                if "page_number" in meta:
-                    ref += f", page {meta['page_number']}"
-                if "paragraph_number" in meta:
-                    ref += f", paragraph {meta['paragraph_number']}"
-                references.append(ref)
-                context += f"[{ref}]: {doc}\n\n"
-
-            prompt = (
-                f"Context:\n{context}\n\n"
-                f"User Question: {user_input}\n\n"
-                "Please think carefully before responding. Your final answer should be helpful and grounded in the provided context."
-            )
-
-            response = hf_pipeline(prompt, max_new_tokens=512, do_sample=True, temperature=0.7)[0]
-            if isinstance(response, dict):
-                response_text = response.get("generated_text", "[No response]")
-            else:
-                response_text = response
-            st.markdown(f"<div style='font-size: 14pt; font-weight: bold;'>{response_text}</div>", unsafe_allow_html=True)
-
-    files = st.file_uploader("Upload your documents (PDF/DOCX)", type=["pdf", "docx"], accept_multiple_files=True)
     if files:
         text, meta = get_file_text(files)
-        st.write("Extracted Metadata:", meta)
         chunks = get_text_chunks(text, meta)
         store_chunks_in_chromadb(chunks)
-        st.success("Documents uploaded and processed successfully!")
 
-def budget_calculator_page():
-    st.header("Tour Budget Calculator")
-    show_budget_calculator()
+    chunks = query_chromadb(user_input)
+    context = ""
+    references = []
+    for doc, meta in chunks:
+        ref = meta.get("document_name", "Unknown")
+        if "page_number" in meta:
+            ref += f", page {meta['page_number']}"
+        if "paragraph_number" in meta:
+            ref += f", paragraph {meta['paragraph_number']}"
+        references.append(ref)
+        context += f"[{ref}]: {doc}\n\n"
 
-# -------- Main App --------
-def main():
-    st.set_page_config(page_title="Regional Tourism Chatbot", layout="wide")
-    st.title("Regional Tourism Chatbot")
-    st.sidebar.title("Navigation")
-    choice = st.sidebar.radio("Go to", ["Chatbot", "Budget Calculator", "Performance Analyzer", "Guide Map"])
+    prompt = (
+        f"Context:\n{context}\n\n"
+        f"User Question: {user_input}\n\n"
+        "Please think carefully before responding. Your final answer should be helpful and grounded in the provided context."
+    )
 
-    if choice == "Chatbot":
-        chatbot_page()
-    elif choice == "Budget Calculator":
-        budget_calculator_page()
-    elif choice == "Performance Analyzer":
-        analyze_performance()
-    elif choice == "Guide Map":
-        show_guide_map()
+    response = hf_pipeline(prompt, max_new_tokens=512, do_sample=True, temperature=0.7)[0]
+    response_text = response.get("generated_text", "[No response]") if isinstance(response, dict) else response
 
-if __name__ == "__main__":
-    main()
+    references_markdown = "**References:**\n" + "\n".join(f"- {r}" for r in references) if references else "*No references found.*"
+    return f"**Response:**\n{response_text}\n\n{references_markdown}"
+
+# Gradio tab: Budget Calculator
+
+def budget_tab():
+    return show_budget_calculator()
+
+# Gradio tab: Performance Analyzer
+
+def performance_tab():
+    return analyze_performance()
+
+# Gradio tab: Guide Map
+
+def guide_map_tab():
+    return '<iframe src="https://arnob4762.github.io/tour-guide/" width="100%" height="600px" style="border:none;"></iframe>'
+
+# Gradio UI setup
+with gr.Blocks() as demo:
+    gr.Markdown("## 🧭 Regional Tourism Chatbot")
+
+    with gr.Tab("📄 Chatbot"):
+        chatbot_input = gr.Textbox(label="Ask a question about your documents:")
+        chatbot_files = gr.File(label="Upload PDF or DOCX", file_types=['.pdf', '.docx'], file_count="multiple")
+        chatbot_output = gr.Markdown()
+        chatbot_button = gr.Button("Get Answer")
+        chatbot_button.click(fn=chat_with_documents, inputs=[chatbot_input, chatbot_files], outputs=chatbot_output)
+
+    with gr.Tab("💰 Budget Calculator"):
+        budget_tab()
+
+    with gr.Tab("📊 Performance Analyzer"):
+        performance_tab()
+
+    with gr.Tab("🗺️ Guide Map"):
+        guide_map_iframe = gr.HTML(guide_map_tab())
+
+demo.launch()

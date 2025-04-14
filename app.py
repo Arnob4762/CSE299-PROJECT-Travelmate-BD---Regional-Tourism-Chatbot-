@@ -26,15 +26,15 @@ embedding_model = load_embedding_model()
 # Cache and load the Hugging Face LLM model with token
 @st.cache_resource(show_spinner=False)
 def load_hf_model():
-    token = os.environ.get("HUGGINGFACE_TOKEN")  # use the token from the environment
+    token = os.environ.get("HUGGINGFACE_TOKEN")  # your read access token
 
     tokenizer = AutoTokenizer.from_pretrained(
-        "deepseek-ai/deepseek-llm-7b-instruct",
+        "mistralai/Mistral-7B-v0.1",
         token=token
     )
 
     model = AutoModelForCausalLM.from_pretrained(
-        "deepseek-ai/deepseek-llm-7b-instruct",
+        "mistralai/Mistral-7B-v0.1",
         torch_dtype=torch.float16,
         device_map="auto",
         token=token

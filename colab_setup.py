@@ -7,7 +7,7 @@ import time
 
 # Step 2: Install required packages
 print("Installing requirements...")
-subprocess.run(["pip", "install", "-r", "requirement.txt"])
+subprocess.run(["pip", "install", "-r", "requirements.txt"])
 
 # Step 3: Install and configure ngrok
 print("Setting up ngrok...")

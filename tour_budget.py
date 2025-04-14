@@ -405,4 +405,4 @@ def show_budget_calculator():
 
 # For standalone run (optional)
 if __name__ == "__main__":
-    show_budget_calculator().launch()
+    show_budget_calculator().launch(share=True)

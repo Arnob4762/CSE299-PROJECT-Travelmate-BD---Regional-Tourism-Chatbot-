@@ -11,6 +11,7 @@ import torch
 import traceback
 from tour_budget import show_budget_calculator
 from performance_analyzer import track_query_performance, analyze_performance
+import os
 
 # Load environment variables
 load_dotenv()
@@ -25,7 +26,7 @@ embedding_model = load_embedding_model()
 # Cache and load the Hugging Face LLM model with token
 @st.cache_resource(show_spinner=False)
 def load_hf_model():
-    token = "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"  # your Hugging Face token
+    token = os.environ.get("HUGGINGFACE_TOKEN")  # use the token from the environment
 
     tokenizer = AutoTokenizer.from_pretrained(
         "deepseek-ai/deepseek-llm-7b-instruct",
@@ -42,7 +43,6 @@ def load_hf_model():
     return pipeline("text-generation", model=model, tokenizer=tokenizer, device=0)
 
 hf_pipeline = load_hf_model()
-
 
 # Initialize ChromaDB
 chroma_client = chromadb.PersistentClient(path="./chroma_db")

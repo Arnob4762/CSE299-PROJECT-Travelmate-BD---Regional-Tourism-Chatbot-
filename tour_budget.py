@@ -372,6 +372,10 @@ Trip Duration: {days} days, {nights} hotel nights
 """
     return memo
 
+# Define the show_budget_calculator function to use in app.py
+def show_budget_calculator(destination, transport_selected, hotel_selected, restaurant_selected, days, nights, season_selected):
+    return calculate_budget(destination, transport_selected, hotel_selected, restaurant_selected, days, nights, season_selected)
+
 # Dynamic input updater
 def update_options(destination):
     return (
@@ -396,7 +400,7 @@ with gr.Blocks() as demo:
     calc_btn = gr.Button("Calculate Budget")
     output = gr.Textbox(label="Tour Budget Summary", lines=25)
 
-    calc_btn.click(fn=calculate_budget, inputs=[destination, transport, hotel, restaurant, days, nights, season], outputs=output)
+    calc_btn.click(fn=show_budget_calculator, inputs=[destination, transport, hotel, restaurant, days, nights, season], outputs=output)
 
 if __name__ == "__main__":
     demo.launch()

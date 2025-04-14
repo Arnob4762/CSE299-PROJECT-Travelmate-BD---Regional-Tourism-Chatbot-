@@ -23,21 +23,23 @@ def load_embedding_model():
 
 embedding_model = load_embedding_model()
 
-# Cache and load the Hugging Face LLM model with token
+# Load the Falcon-7B-Instruct model from Hugging Face
 @st.cache_resource(show_spinner=False)
 def load_hf_model():
-    token = os.environ.get("HUGGINGFACE_TOKEN")  # your read access token
+    token = os.environ.get("HUGGINGFACE_TOKEN")  # optional if you have it
 
     tokenizer = AutoTokenizer.from_pretrained(
-        "mistralai/Mistral-7B-v0.1",
-        token=token
+        "tiiuae/falcon-7b-instruct",
+        token=token,
+        trust_remote_code=True
     )
 
     model = AutoModelForCausalLM.from_pretrained(
-        "mistralai/Mistral-7B-v0.1",
+        "tiiuae/falcon-7b-instruct",
+        token=token,
+        trust_remote_code=True,
         torch_dtype=torch.float16,
-        device_map="auto",
-        token=token
+        device_map="auto"
     )
 
     return pipeline("text-generation", model=model, tokenizer=tokenizer, device=0)
@@ -163,19 +165,11 @@ def chatbot_page():
             prompt = (
                 f"Context:\n{context}\n\n"
                 f"User Question: {user_input}\n\n"
-                "Please provide your internal chain-of-thought (prefixed with 'Thinking:') and then your final answer (prefixed with 'Final Answer:')."
+                "Please think carefully before responding. Your final answer should be helpful and grounded in the provided context."
             )
 
             response = hf_pipeline(prompt, max_new_tokens=512, do_sample=True, temperature=0.7)[0]['generated_text']
-            parts = response.split("Final Answer:")
-            thinking = parts[0].split("Thinking:")[-1].strip() if "Thinking:" in parts[0] else ""
-            final = parts[1].strip() if len(parts) > 1 else response
-
-            if thinking:
-                st.markdown(f"<div style='color: gray; font-style: italic;'>&lt;thinking&gt;<br>{thinking}</div>", unsafe_allow_html=True)
-
-            formatted = "<ul>" + "".join([f"<li>{line.strip()}</li>" for line in final.split('\n') if line.strip()]) + "</ul>"
-            st.markdown(f"<div style='font-size: 14pt; font-weight: bold;'>{formatted}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-size: 14pt; font-weight: bold;'>{response}</div>", unsafe_allow_html=True)
 
     files = st.file_uploader("Upload your documents (PDF/DOCX)", type=["pdf", "docx"], accept_multiple_files=True)
     if files:

@@ -6,21 +6,36 @@ import docx
 from langchain.text_splitter import CharacterTextSplitter
 import chromadb
 from sentence_transformers import SentenceTransformer
-import ollama
-from tour_budget import show_budget_calculator  # Budget Estimator
-from performance_analyzer import track_query_performance, analyze_performance  # Performance tracker
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+import torch
+import traceback
+from tour_budget import show_budget_calculator
+from performance_analyzer import track_query_performance, analyze_performance
 
 # Load environment variables
 load_dotenv()
 
-# Load Embedding Model
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+# Cache and load the embedding model
+@st.cache_resource(show_spinner=False)
+def load_embedding_model():
+    return SentenceTransformer("all-MiniLM-L6-v2")
 
-# Initialize ChromaDB client and collection
+embedding_model = load_embedding_model()
+
+# Cache and load the Hugging Face LLM model
+@st.cache_resource(show_spinner=False)
+def load_hf_model():
+    tokenizer = AutoTokenizer.from_pretrained("deepseek-ai/deepseek-llm-7b-instruct")
+    model = AutoModelForCausalLM.from_pretrained("deepseek-ai/deepseek-llm-7b-instruct", torch_dtype=torch.float16, device_map="auto")
+    return pipeline("text-generation", model=model, tokenizer=tokenizer)
+
+hf_pipeline = load_hf_model()
+
+# Initialize ChromaDB
 chroma_client = chromadb.PersistentClient(path="./chroma_db")
 collection = chroma_client.get_or_create_collection(name="tourism_chatbot")
 
-# Predefined responses for small talk
+# Small talk
 BASIC_RESPONSES = {
     "hi": "Hello! How can I assist you?",
     "hello": "Hi there! Ask me anything related to your uploaded documents.",
@@ -28,56 +43,41 @@ BASIC_RESPONSES = {
     "what is your name": "I'm your Tourism Chatbot, here to help with document-based queries!",
 }
 
-# ----- DOCUMENT PROCESSING FUNCTIONS -----
+# -------- File Processing --------
 def get_file_text(files):
-    text = ""
-    metadata = []
+    text, metadata = "", []
     try:
         for file in files:
             if file.type == "application/pdf":
-                pdf_reader = PdfReader(file)
-                for page_num, page in enumerate(pdf_reader.pages):
-                    page_text = page.extract_text()
-                    if page_text:
-                        text += page_text + "\n\n"
-                        metadata.append({
-                            "document_name": file.name,
-                            "page_number": page_num + 1
-                        })
+                reader = PdfReader(file)
+                for i, page in enumerate(reader.pages):
+                    content = page.extract_text()
+                    if content:
+                        text += content + "\n\n"
+                        metadata.append({"document_name": file.name, "page_number": i + 1})
             elif file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
                 doc = docx.Document(file)
-                for para_num, para in enumerate(doc.paragraphs):
+                for i, para in enumerate(doc.paragraphs):
                     text += para.text + "\n\n"
-                    metadata.append({
-                        "document_name": file.name,
-                        "paragraph_number": para_num + 1
-                    })
+                    metadata.append({"document_name": file.name, "paragraph_number": i + 1})
     except Exception as e:
         st.error(f"Error reading files: {e}")
+        st.text(traceback.format_exc())
     return text.strip(), metadata
 
 def get_text_chunks(text, metadata):
     try:
-        splitter = CharacterTextSplitter(
-            separator="\n\n",
-            chunk_size=500,
-            chunk_overlap=100,
-            length_function=len
-        )
+        splitter = CharacterTextSplitter(separator="\n\n", chunk_size=500, chunk_overlap=100)
         chunks = splitter.split_text(text)
-        chunk_metadata = []
-        for i, chunk in enumerate(chunks):
-            meta = metadata[i % len(metadata)] if metadata else {}
-            chunk_metadata.append((chunk, meta))
-        return chunk_metadata
+        chunk_metadata = [metadata[i % len(metadata)] for i in range(len(chunks))]
+        return list(zip(chunks, chunk_metadata))
     except Exception as e:
         st.error(f"Error splitting text: {e}")
         return []
 
 def generate_embeddings(chunks):
     try:
-        texts = [chunk[0] for chunk in chunks]
-        return embedding_model.encode(texts, convert_to_numpy=True).tolist()
+        return embedding_model.encode([chunk[0] for chunk in chunks], convert_to_numpy=True).tolist()
     except Exception as e:
         st.error(f"Error generating embeddings: {e}")
         return []
@@ -98,40 +98,27 @@ def store_chunks_in_chromadb(chunks):
                 metadatas=[meta]
             )
     except Exception as e:
-        st.error(f"Error storing chunks in ChromaDB: {e}")
+        st.error(f"Error storing chunks: {e}")
+        st.text(traceback.format_exc())
 
 def query_chromadb(query):
+    start_time = time.time()
     try:
-        start_time = time.time()  # Record start time
         if collection.count() == 0:
             return []
-        query_embedding = embedding_model.encode([query]).tolist()[0]
-        results = collection.query(query_embeddings=[query_embedding], n_results=5)
-        docs = results.get("documents", [])
-        metas = results.get("metadatas", [])
-        
-        # Debug: display metadata retrieved from query results
-        st.write("References:", metas)
-        
-        # Track query performance
-        query_duration = time.time() - start_time
-        track_query_performance(
-            success=True,
-            response_time=query_duration,
-            document_reference_hit=bool(docs)
-        )
-        return [(doc, meta) for doc, meta in zip(docs, metas)]
+        embedding = embedding_model.encode([query]).tolist()[0]
+        results = collection.query(query_embeddings=[embedding], n_results=5)
+        documents, metadatas = results.get("documents", []), results.get("metadatas", [])
+        st.write("References:", metadatas)
+        duration = time.time() - start_time
+        track_query_performance(True, duration, bool(documents))
+        return list(zip(documents, metadatas))
     except Exception as e:
-        query_duration = time.time() - start_time
-        track_query_performance(
-            success=False,
-            response_time=query_duration,
-            document_reference_hit=False
-        )
+        track_query_performance(False, time.time() - start_time, False)
         st.error(f"Error querying ChromaDB: {e}")
         return []
 
-# ----- GUIDE MAP -----
+# -------- UI Pages --------
 def show_guide_map():
     st.header("Tour Guide Map")
     st.markdown(
@@ -139,131 +126,71 @@ def show_guide_map():
         unsafe_allow_html=True
     )
 
-# ----- CHATBOT PAGE -----
 def chatbot_page():
-    st.header("  ")
+    st.header("Chat with Your Documents")
     user_input = st.text_input("Ask a question about your documents:")
 
     if user_input:
-        lower_input = user_input.lower().strip()
-        if lower_input in BASIC_RESPONSES:
-            st.write(BASIC_RESPONSES[lower_input])
+        query = user_input.lower().strip()
+        if query in BASIC_RESPONSES:
+            st.write(BASIC_RESPONSES[query])
         else:
-            relevant_chunks = query_chromadb(user_input)
+            chunks = query_chromadb(user_input)
             context = ""
-            references_list = []
-            for doc, meta in relevant_chunks:
-                if isinstance(meta, dict):
-                    doc_name = meta.get("document_name", "Unknown Document")
-                    page = meta.get("page_number")
-                    paragraph = meta.get("paragraph_number")
-                    ref_str = f"{doc_name}"
-                    if page:
-                        ref_str += f", page {page}"
-                    if paragraph:
-                        ref_str += f", paragraph {paragraph}"
-                    references_list.append(ref_str)
-                    context += f"[{ref_str}]: {str(doc)}\n\n"
-                else:
-                    context += str(doc) + "\n\n"
+            references = []
+            for doc, meta in chunks:
+                ref = meta.get("document_name", "Unknown")
+                if "page_number" in meta:
+                    ref += f", page {meta['page_number']}"
+                if "paragraph_number" in meta:
+                    ref += f", paragraph {meta['paragraph_number']}"
+                references.append(ref)
+                context += f"[{ref}]: {doc}\n\n"
 
-            # # Debug: show references list for checking
-            # st.write("References List:", references_list)
-
-            # if not context:
-            #     st.warning("No relevant data found.")
-            #     context = "No relevant data found."
-            
-            # Modified prompt with instructions for chain-of-thought and final answer
             prompt = (
                 f"Context:\n{context}\n\n"
                 f"User Question: {user_input}\n\n"
                 "Please provide your internal chain-of-thought (prefixed with 'Thinking:') and then your final answer (prefixed with 'Final Answer:')."
             )
-            
-            response = ollama.chat(model="deepseek-r1:1.5b", messages=[{"role": "user", "content": prompt}])["message"]["content"]
-            
-            # Split response by the delimiter "Final Answer:"
-            if "Final Answer:" in response:
-                parts = response.split("Final Answer:")
-                chain_of_thought = parts[0].replace("Thinking:", "").strip()
-                final_answer = parts[1].strip()
-            else:
-                chain_of_thought = ""
-                final_answer = response.strip()
 
-            # --- Modified Section Start ---
-            # Display the internal chain-of-thought in light ash color, 10pt Times New Roman
-            if chain_of_thought:
-                st.markdown(
-                    f"<div style='color: #D3D3D3; font-size: 10pt; font-family: \"Times New Roman\", Times, serif; margin-bottom: 10px;'>"
-                    f"<em>&lt;thinking.....&gt;<br>{chain_of_thought}</em></div>",
-                    unsafe_allow_html=True
-                )
-            
-            # Format the final answer as a bullet list in bright white, bold, 14pt Times New Roman
-            final_answer_lines = [line.strip() for line in final_answer.split('\n') if line.strip()]
-            formatted_final_answer = "<ul style='list-style-type: disc; margin-left: 20px;'>"
-            for line in final_answer_lines:
-                formatted_final_answer += f"<li>{line}</li>"
-            formatted_final_answer += "</ul>"
-            st.markdown(
-                f"<div style='color: #FFFFFF; font-size: 14pt; font-family: \"Times New Roman\", Times, serif; font-weight: bold; margin-bottom: 20px;'>"
-                f"{formatted_final_answer}</div>",
-                unsafe_allow_html=True
-            )
-            
-            # Display the document references as "References List:" below the final answer
+            response = hf_pipeline(prompt, max_new_tokens=512, do_sample=True, temperature=0.7)[0]['generated_text']
+            parts = response.split("Final Answer:")
+            thinking = parts[0].split("Thinking:")[-1].strip() if "Thinking:" in parts[0] else ""
+            final = parts[1].strip() if len(parts) > 1 else response
 
+            if thinking:
+                st.markdown(f"<div style='color: gray; font-style: italic;'>&lt;thinking&gt;<br>{thinking}</div>", unsafe_allow_html=True)
 
-            # st.markdown("<hr>", unsafe_allow_html=True)
-            # st.markdown(
-            #     "<div style='font-size: 0.9em; margin-bottom: 10px;'><strong>References List:</strong></div>",
-            #     unsafe_allow_html=True
-            # )
-            # if references_list:
-            #     formatted_refs = "<ul style='list-style-type: disc; margin-left: 20px;'>"
-            #     for ref in set(references_list):
-            #         formatted_refs += f"<li>{ref}</li>"
-            #     formatted_refs += "</ul>"
-            #     st.markdown(formatted_refs, unsafe_allow_html=True)
-            # else:
-            #     st.markdown("<div style='font-size: 0.9em;'>No document references found.</div>", unsafe_allow_html=True)
-            
-            # Add a gap before the document upload box
-            st.markdown("<br><br>", unsafe_allow_html=True)
-            # --- Modified Section End ---
+            formatted = "<ul>" + "".join([f"<li>{line.strip()}</li>" for line in final.split('\n') if line.strip()]) + "</ul>"
+            st.markdown(f"<div style='font-size: 14pt; font-weight: bold;'>{formatted}</div>", unsafe_allow_html=True)
 
-    # Document Upload Section
-    uploaded_files = st.file_uploader("Upload your documents (PDF/Word)", type=["pdf", "docx"], accept_multiple_files=True)
-    if uploaded_files:
-        text, metadata = get_file_text(uploaded_files)
-        st.write("Extracted Metadata:", metadata)  # Debug: Verify metadata extraction
-        chunks = get_text_chunks(text, metadata)
+    files = st.file_uploader("Upload your documents (PDF/DOCX)", type=["pdf", "docx"], accept_multiple_files=True)
+    if files:
+        text, meta = get_file_text(files)
+        st.write("Extracted Metadata:", meta)
+        chunks = get_text_chunks(text, meta)
         store_chunks_in_chromadb(chunks)
         st.success("Documents uploaded and processed successfully!")
 
-# ----- BUDGET CALCULATOR PAGE -----
 def budget_calculator_page():
     st.header("Tour Budget Calculator")
-    show_budget_calculator()  # This function now displays the calculator in the main UI
+    show_budget_calculator()
 
-# ----- MAIN APP LAYOUT -----
+# -------- Main App --------
 def main():
+    st.set_page_config(page_title="Regional Tourism Chatbot", layout="wide")
     st.title("Regional Tourism Chatbot")
-
-    # Sidebar with navigation
     st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Select a page", ["Chatbot", "Budget Calculator", "Performance Analyzer", "Guide Map"])
-    
-    if page == "Chatbot":
+    choice = st.sidebar.radio("Go to", ["Chatbot", "Budget Calculator", "Performance Analyzer", "Guide Map"])
+
+    if choice == "Chatbot":
         chatbot_page()
-    elif page == "Guide Map":
-        show_guide_map()
-    elif page == "Budget Calculator":
+    elif choice == "Budget Calculator":
         budget_calculator_page()
-    elif page == "Performance Analyzer":
+    elif choice == "Performance Analyzer":
         analyze_performance()
+    elif choice == "Guide Map":
+        show_guide_map()
 
 if __name__ == "__main__":
     main()

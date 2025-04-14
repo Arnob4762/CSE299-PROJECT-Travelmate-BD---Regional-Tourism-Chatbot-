@@ -6,5 +6,7 @@ langchain
 chromadb
 sentence-transformers
 numpy
-ollama
 psutil
+transformers
+torch
+pyngrok

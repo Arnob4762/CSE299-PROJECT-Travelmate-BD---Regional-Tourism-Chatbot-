@@ -1,4 +1,4 @@
-streamlit
+gradio
 python-dotenv
 PyPDF2
 python-docx
@@ -9,4 +9,3 @@ numpy
 psutil
 transformers
 torch
-pyngrok

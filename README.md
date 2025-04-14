@@ -1,6 +1,6 @@
 # **🌍 Travelmate BD – Regional Tourism Chatbot**
 
-**Regional Tourism Chatbot** is an AI-powered chatbot designed to assist users in planning and exploring regional tours across Bangladesh. Developed as part of the "CSE 299 – Junior Design Project (Spring 2025, Section 19)" at North South University, this web-based application leverages natural language processing to deliver destination guidance, budget estimation, and document-based question answering — all through a user-friendly interface built with **Streamlit** and deployed via **Google Colab** using **ngrok**.
+**Regional Tourism Chatbot** is an AI-powered chatbot designed to assist users in planning and exploring regional tours across Bangladesh. Developed as part of the "CSE 299 – Junior Design Project (Spring 2025, Section 19)" at North South University, this web-based application leverages natural language processing to deliver destination guidance, budget estimation, and document-based question answering — all through a user-friendly interface built with **Gradio** and deployed via **Google Colab**.
 
 ---
 
@@ -26,7 +26,7 @@
 - **Document QA**: Context-aware answers from uploaded PDF or DOCX files.
 - **Tour Budget Calculator**: Estimates costs for transportation, accommodation, and more.
 - **Performance Analyzer**: Monitors memory and response time in real time.
-- **Web-Based Interface**: Runs seamlessly on Google Colab with public access via ngrok.
+- **Web-Based Interface**: Runs seamlessly on Google Colab with public access via Gradio’s shareable links.
 
 ---
 
@@ -42,18 +42,17 @@
    ```python
    !python colab_setup.py
    ```
-4. After initialization, an **ngrok URL** will be displayed. Click the URL to access the chatbot in your browser.
+4. After initialization, a **Gradio public link** will be displayed. Click the URL to access the chatbot in your browser.
 
 ---
 
 ## 🛠 Technologies Used
 
 - Python  
-- Streamlit  
+- Gradio  
 - Hugging Face Transformers  
 - ChromaDB  
 - Google Colab  
-- Ngrok  
 - PyPDF2, python-docx  
 - psutil
 
@@ -62,8 +61,4 @@
 ## 📄 License & Acknowledgements
 
 This project is intended for educational purposes only.  
-We gratefully acknowledge the guidance of **Dr. Shafin Rahman** 
-
----
-
-```
+We gratefully acknowledge the guidance of **Dr. Shafin Rahman**.

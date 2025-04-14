@@ -22,14 +22,27 @@ def load_embedding_model():
 
 embedding_model = load_embedding_model()
 
-# Cache and load the Hugging Face LLM model
+# Cache and load the Hugging Face LLM model with token
 @st.cache_resource(show_spinner=False)
 def load_hf_model():
-    tokenizer = AutoTokenizer.from_pretrained("deepseek-ai/deepseek-llm-7b-instruct")
-    model = AutoModelForCausalLM.from_pretrained("deepseek-ai/deepseek-llm-7b-instruct", torch_dtype=torch.float16, device_map="auto")
-    return pipeline("text-generation", model=model, tokenizer=tokenizer)
+    token = "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"  # your Hugging Face token
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        "deepseek-ai/deepseek-llm-7b-instruct",
+        token=token
+    )
+
+    model = AutoModelForCausalLM.from_pretrained(
+        "deepseek-ai/deepseek-llm-7b-instruct",
+        torch_dtype=torch.float16,
+        device_map="auto",
+        token=token
+    )
+
+    return pipeline("text-generation", model=model, tokenizer=tokenizer, device=0)
 
 hf_pipeline = load_hf_model()
+
 
 # Initialize ChromaDB
 chroma_client = chromadb.PersistentClient(path="./chroma_db")

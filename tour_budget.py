@@ -12,6 +12,7 @@ import gradio as gr
 def get_average_cost(cost_range):
     return (cost_range["min"] + cost_range["max"]) / 2
 
+
 # Define destination data
 destinations = {
         "Cox's Bazar": {
@@ -328,7 +329,7 @@ season_multiplier = {
     "On-Season": 1.2
 }
 
-# Main calculator logic
+# Budget calculation logic
 def calculate_budget(destination, transport_selected, hotel_selected, restaurant_selected, days, nights, season_selected):
     season_factor = season_multiplier[season_selected]
     meals_per_day = 3
@@ -372,11 +373,7 @@ Trip Duration: {days} days, {nights} hotel nights
 """
     return memo
 
-# Define the show_budget_calculator function to use in app.py
-def show_budget_calculator(destination, transport_selected, hotel_selected, restaurant_selected, days, nights, season_selected):
-    return calculate_budget(destination, transport_selected, hotel_selected, restaurant_selected, days, nights, season_selected)
-
-# Dynamic input updater
+# Dynamic dropdown updater
 def update_options(destination):
     return (
         list(destinations[destination]["transport"].keys()),
@@ -384,23 +381,28 @@ def update_options(destination):
         list(destinations[destination]["restaurants"].keys())
     )
 
-with gr.Blocks() as demo:
-    gr.Markdown("## Tour Budget Calculator")
+# Wrapper to embed this UI in app.py without arguments
+def show_budget_calculator():
+    with gr.Blocks() as demo:
+        gr.Markdown("## Tour Budget Calculator")
 
-    destination = gr.Dropdown(label="Select Destination", choices=list(destinations.keys()))
-    transport = gr.Dropdown(label="Select Transportation Option")
-    hotel = gr.Dropdown(label="Select Hotel Category")
-    restaurant = gr.Dropdown(label="Select Restaurant Category")
-    days = gr.Number(label="Number of Days", value=1, precision=0, minimum=1)
-    nights = gr.Number(label="Number of Hotel Nights", value=1, precision=0, minimum=1)
-    season = gr.Dropdown(label="Select Season", choices=list(season_multiplier.keys()), value="Off-Season")
+        destination = gr.Dropdown(label="Select Destination", choices=list(destinations.keys()))
+        transport = gr.Dropdown(label="Select Transportation Option")
+        hotel = gr.Dropdown(label="Select Hotel Category")
+        restaurant = gr.Dropdown(label="Select Restaurant Category")
+        days = gr.Number(label="Number of Days", value=1, precision=0, minimum=1)
+        nights = gr.Number(label="Number of Hotel Nights", value=1, precision=0, minimum=1)
+        season = gr.Dropdown(label="Select Season", choices=list(season_multiplier.keys()), value="Off-Season")
 
-    destination.change(fn=update_options, inputs=destination, outputs=[transport, hotel, restaurant])
+        destination.change(fn=update_options, inputs=destination, outputs=[transport, hotel, restaurant])
 
-    calc_btn = gr.Button("Calculate Budget")
-    output = gr.Textbox(label="Tour Budget Summary", lines=25)
+        calc_btn = gr.Button("Calculate Budget")
+        output = gr.Textbox(label="Tour Budget Summary", lines=25)
 
-    calc_btn.click(fn=show_budget_calculator, inputs=[destination, transport, hotel, restaurant, days, nights, season], outputs=output)
+        calc_btn.click(fn=calculate_budget, inputs=[destination, transport, hotel, restaurant, days, nights, season], outputs=output)
 
+    return demo
+
+# For standalone run (optional)
 if __name__ == "__main__":
-    demo.launch()
+    show_budget_calculator().launch()

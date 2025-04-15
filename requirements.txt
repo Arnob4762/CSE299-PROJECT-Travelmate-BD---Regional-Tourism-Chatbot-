@@ -10,3 +10,5 @@ psutil
 transformers
 torch
 compressed-tensors
+accelerate
+scipy

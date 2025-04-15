@@ -180,4 +180,4 @@ with gr.Blocks() as demo:
     with gr.Tab("🗺️ Guide Map"):
         guide_map_iframe = gr.HTML(guide_map_tab())
 
-demo.launch()
+demo.launch(share=True)

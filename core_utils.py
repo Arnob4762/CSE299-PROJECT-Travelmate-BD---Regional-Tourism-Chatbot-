@@ -14,7 +14,7 @@ embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 app_state = {
     "chat_history": [],
     "total_queries": 0,
-    "accurate_responses": 0,  # Accuracy placeholder; can be updated manually or automatically
+    "accurate_responses": 0,
     "total_response_time": 0,
     "faiss_index": None,
     "text_chunks": [],
@@ -23,17 +23,21 @@ app_state = {
     "BASIC_RESPONSES": {}
 }
 
+# ---------------------------
 # File handling
+# ---------------------------
 def get_file_text(files):
     text, metadata = "", []
     for file in files:
         if file.name.endswith(".pdf"):
             reader = PdfReader(file)
             for i, page in enumerate(reader.pages):
-                content = page.extract_text()
-                if content:
+                try:
+                    content = page.extract_text() or ""
                     text += content + "\n\n"
                     metadata.append((file.name, f"page {i + 1}"))
+                except Exception as e:
+                    print(f"Warning: Failed to read page {i + 1} of {file.name} – {e}")
         elif file.name.endswith(".docx"):
             doc = docx.Document(file)
             for i, para in enumerate(doc.paragraphs):
@@ -41,11 +45,18 @@ def get_file_text(files):
                 metadata.append((file.name, f"paragraph {i + 1}"))
     return text.strip(), metadata
 
-# Processing
+# ---------------------------
+# Chunk processing
+# ---------------------------
 def process_and_store_chunks(text, metadata):
     splitter = CharacterTextSplitter(separator="\n\n", chunk_size=500, chunk_overlap=100)
     chunks = splitter.split_text(text)
-    chunk_meta = [metadata[i % len(metadata)] for i in range(len(chunks))]
+
+    # Align metadata
+    if len(metadata) < len(chunks):
+        metadata += [metadata[-1]] * (len(chunks) - len(metadata))
+    chunk_meta = metadata[:len(chunks)]
+
     embeddings = embedding_model.encode(chunks, convert_to_numpy=True)
 
     app_state["text_chunks"] = chunks
@@ -54,16 +65,28 @@ def process_and_store_chunks(text, metadata):
     index.add(np.array(embeddings))
     app_state["faiss_index"] = index
 
-# Retrieval
+# ---------------------------
+# Context retrieval
+# ---------------------------
 def retrieve_context(query, k=5):
     if not app_state["faiss_index"] or not app_state["text_chunks"]:
         return []
+    
     query_embedding = embedding_model.encode([query], convert_to_numpy=True)
     D, I = app_state["faiss_index"].search(query_embedding, k)
-    # Return list of tuples: (chunk, metadata)
-    return [(app_state["text_chunks"][i], app_state["meta_chunks"][i]) for i in I[0]]
 
-# Performance Tracking
+    results = []
+    for i in I[0]:
+        if i >= 0 and i < len(app_state["text_chunks"]):
+            chunk = app_state["text_chunks"][i]
+            meta = app_state["meta_chunks"][i]
+            if chunk.strip():
+                results.append((chunk, meta))
+    return results
+
+# ---------------------------
+# Performance tracking
+# ---------------------------
 def update_performance_stats(response_time, is_accurate):
     app_state["total_queries"] += 1
     app_state["total_response_time"] += response_time
@@ -82,7 +105,9 @@ def get_performance_report():
         f"Average Response Time: {avg_time:.2f} seconds"
     )
 
-# Chatbot core
+# ---------------------------
+# Chat logic
+# ---------------------------
 def chat_with_documents(user_input, files):
     start_time = time.time()
     key = user_input.lower().strip()
@@ -94,76 +119,66 @@ def chat_with_documents(user_input, files):
         if files:
             text, meta = get_file_text(files)
             process_and_store_chunks(text, meta)
-        else:
-            app_state["faiss_index"] = None
-            app_state["text_chunks"] = []
-            app_state["meta_chunks"] = []
+        elif not app_state["faiss_index"]:
+            return "**Response:** Please upload a document first."
 
-        # Retrieve relevant context
+        # Retrieve context
         results = retrieve_context(user_input)
         if results:
-            top_chunk, (filename, page_num) = results[0]
-            reference = f"[{filename}, page {page_num}]"
-            context = top_chunk
+            top_chunks = results[:2]  # Use top 2 for more richness
+            context = "\n\n".join(chunk for chunk, _ in top_chunks)
+            references = ", ".join([f"{filename}, {page}" for _, (filename, page) in top_chunks])
+            reference_tag = f"[{references}]"
         else:
             context = ""
-            reference = ""
+            reference_tag = ""
 
-        # 📌 Build the prompt
+        # Build prompt
         prompt = (
-            f"Answer this question using the provided context only.\n"
-            f"Be direct and concise. End with the source in brackets.\n\n"
-            f"Context: {context}\n"
+            f"Answer the following question using ONLY the provided context below.\n"
+            f"Be direct and concise. Do NOT use outside knowledge.\n"
+            f"End your answer with the source reference in brackets.\n\n"
+            f"Context:\n{context}\n\n"
             f"Question: {user_input}\n"
             f"Answer:"
         )
 
-        # 🔥 Generate answer using Hugging Face pipeline
         hf_pipeline = app_state["hf_pipeline"]
         gen_result = hf_pipeline(prompt, max_new_tokens=150, do_sample=False, temperature=0.3)[0]
         full_output = gen_result["generated_text"] if isinstance(gen_result, dict) else gen_result
 
-        # ✂️ Extract answer after "Answer:" (to remove echoed prompt)
         if "Answer:" in full_output:
             response = full_output.split("Answer:")[-1].strip()
         else:
             response = full_output.strip()
 
-        # 🧼 Optionally append the reference if it's missing
-        if reference and reference not in response:
-            response += f" {reference}"
+        if reference_tag and reference_tag not in response:
+            response += f" {reference_tag}"
 
-    # ⏱️ Log stats
+    # Log stats
     elapsed = time.time() - start_time
     update_performance_stats(elapsed, False)
-
-    # 💬 Add to history
     app_state["chat_history"].append((user_input, response))
 
     return f"**Response:** {response}"
 
-
-
 # ---------------------------
-# Manual Feedback Functions
+# Manual Feedback
 # ---------------------------
-
 def on_feedback_accurate():
-    # This function is triggered when the user indicates the response is accurate.
     app_state["accurate_responses"] += 1
     return "Feedback recorded: Accurate"
 
 def on_feedback_inaccurate():
-    # No change needed for inaccurate feedback.
     return "Feedback recorded: Inaccurate"
 
 # ---------------------------
-# Example: Keyword Matching (Semi-Automatic)
+# Auto Feedback (Optional)
 # ---------------------------
 def is_response_accurate(user_input, chatbot_response):
     expected_keywords = {
-        "cox's bazar": ["beach", "sea", "coastal"],
-        "sundarbans": ["mangrove", "tiger", "forest"],
+        "cox's bazar": ["beach", "sea", "coastal", "inani", "laboni", "himchari"],
+        "sundarbans": ["mangrove", "tiger", "forest", "boat"],
     }
     for keyword, required_words in expected_keywords.items():
         if keyword in user_input.lower():
@@ -171,7 +186,6 @@ def is_response_accurate(user_input, chatbot_response):
     return False
 
 def on_bot_response(user_input, chatbot_response):
-    # This function can be used to update the accuracy automatically using keyword matching.
     app_state["total_queries"] += 1
     if is_response_accurate(user_input, chatbot_response):
         app_state["accurate_responses"] += 1

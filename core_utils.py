@@ -18,7 +18,9 @@ app_state = {
     "total_response_time": 0,
     "faiss_index": None,
     "text_chunks": [],
-    "meta_chunks": []
+    "meta_chunks": [],
+    "hf_pipeline": None,
+    "BASIC_RESPONSES": {}
 }
 
 # File handling
@@ -45,7 +47,7 @@ def process_and_store_chunks(text, metadata):
     chunks = splitter.split_text(text)
     chunk_meta = [metadata[i % len(metadata)] for i in range(len(chunks))]
     embeddings = embedding_model.encode(chunks, convert_to_numpy=True)
-    
+
     app_state["text_chunks"] = chunks
     app_state["meta_chunks"] = chunk_meta
     index = faiss.IndexFlatL2(embeddings.shape[1])
@@ -78,3 +80,26 @@ def get_performance_report():
         f"- Accuracy: {accuracy:.2f}%\n"
         f"- Average Response Time: {avg_time:.2f} seconds"
     )
+
+# Chatbot core
+def chat_with_documents(user_input, files):
+    if user_input.lower().strip() in app_state.get("BASIC_RESPONSES", {}):
+        response = app_state["BASIC_RESPONSES"][user_input.lower().strip()]
+    else:
+        if files:
+            text, meta = get_file_text(files)
+            process_and_store_chunks(text, meta)
+
+        results = retrieve_context(user_input)
+        context = "\n".join([f"[{m[0]}, {m[1]}]: {c}" for c, m in results])
+        prompt = (
+            f"Context:\n{context}\n\n"
+            f"User Question: {user_input}\n\n"
+            f"Just provide a clear and concise answer based only on the context. Avoid extra reasoning or justification."
+        )
+        hf_pipeline = app_state["hf_pipeline"]
+        response = hf_pipeline(prompt, max_new_tokens=256, do_sample=True, temperature=0.7)[0]
+        response = response["generated_text"] if isinstance(response, dict) else response
+
+    app_state["chat_history"].append((user_input, response))
+    return f"**Response:**\n{response}"

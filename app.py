@@ -13,7 +13,7 @@ import numpy as np
 import faiss
 import pickle
 from tour_budget import show_budget_calculator
-from performance_analyzer import track_query_performance, analyze_performance
+from performance_analyzer import analyze_performance
 
 # Load environment variables
 load_dotenv()
@@ -113,22 +113,18 @@ def chat_with_documents(user_input, files):
     text_only = response["generated_text"] if isinstance(response, dict) else response
     return f"**Response:**\n{text_only}"
 
-# Performance analyzer tracking
-def track_query_performance(user_input, files):
-    return analyze_performance(user_input, files)
-
 # Gradio tabs
 def budget_tab():
     return show_budget_calculator()
 
 def performance_tab():
-    with gr.Column():
+    with gr.Column() as performance_interface:
         input_box = gr.Textbox(label="Enter a query to analyze:")
         file_input = gr.File(label="Upload PDF or DOCX", file_types=[".pdf", ".docx"], file_count="multiple")
         output_box = gr.Markdown()
         analyze_button = gr.Button("Analyze Performance")
         analyze_button.click(fn=analyze_performance, inputs=[input_box, file_input], outputs=output_box)
-
+    return performance_interface
 
 def guide_map_tab():
     return '<iframe src="https://arnob4762.github.io/tour-guide/" width="100%" height="600px" style="border:none;"></iframe>'

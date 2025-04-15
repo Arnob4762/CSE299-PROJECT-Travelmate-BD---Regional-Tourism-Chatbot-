@@ -19,15 +19,15 @@ load_dotenv()
 # Load embedding model
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
-# Load Hugging Face model pipeline
+# Load DeepSeek LLM model pipeline
 token = os.environ.get("HUGGINGFACE_TOKEN")
 tokenizer = AutoTokenizer.from_pretrained(
-    "tiiuae/falcon-7b-instruct",
+    "deepseek-ai/deepseek-llm-7b-chat",
     token=token,
     trust_remote_code=True
 )
 model = AutoModelForCausalLM.from_pretrained(
-    "tiiuae/falcon-7b-instruct",
+    "deepseek-ai/deepseek-llm-7b-chat",
     token=token,
     trust_remote_code=True,
     torch_dtype=torch.float16,

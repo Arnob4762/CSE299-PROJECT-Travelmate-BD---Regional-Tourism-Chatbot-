@@ -8,8 +8,9 @@ from tour_budget import show_budget_calculator
 from performance_analyzer import analyze_performance
 from core_utils import (
     get_file_text, process_and_store_chunks,
-    retrieve_context, BASIC_RESPONSES, chatbot_history
+    retrieve_context, BASIC_RESPONSES, app_state
 )
+
 
 # Load environment variables
 load_dotenv()
@@ -49,7 +50,7 @@ def chat_with_documents(user_input, files):
         response = hf_pipeline(prompt, max_new_tokens=256, do_sample=True, temperature=0.7)[0]
         response = response["generated_text"] if isinstance(response, dict) else response
 
-    chatbot_history.append((user_input, response))
+    app_state["chat_history"].append((user_input, response))
     return f"**Response:**\n{response}"
 
 # Gradio Interfaces

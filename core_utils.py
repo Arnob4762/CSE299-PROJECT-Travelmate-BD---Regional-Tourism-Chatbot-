@@ -83,43 +83,42 @@ def get_performance_report():
     )
 
 # Chatbot core
+# Chatbot core
 def chat_with_documents(user_input, files):
     start_time = time.time()
     key = user_input.lower().strip()
-    # Use basic responses if applicable
     if key in app_state.get("BASIC_RESPONSES", {}):
         response = app_state["BASIC_RESPONSES"][key]
     else:
         if files:
             text, meta = get_file_text(files)
             process_and_store_chunks(text, meta)
+        else:
+            # Clear previous context if no new file is uploaded
+            app_state["faiss_index"] = None
+            app_state["text_chunks"] = []
+            app_state["meta_chunks"] = []
 
         results = retrieve_context(user_input)
-        # Build a reference string using the first retrieved metadata (if any)
         if results:
             reference = f"[{results[0][1][0]}, {results[0][1][1]}]"
         else:
             reference = ""
-        # Instruct the model to provide a clear and concise answer without including raw context,
-        # and to append the reference at the end.
         prompt = (
             f"User Question: {user_input}\n\n"
-            "Using any relevant context available (but do not include raw context in your answer), "
-            "provide a clear, concise answer. Avoid extra details or reasoning. "
-            "End your answer with the reference in the following format if applicable: "
-            f"{reference}"
+            "Using any relevant context available (but do not include raw context in your answer), provide a clear, concise answer. "
+            "Avoid extra details or reasoning. End your answer with the reference in the following format if applicable: [filename, page number]. "
+            "Do not include any additional commentary or explanation."
         )
         hf_pipeline = app_state["hf_pipeline"]
-        # Generate answer using the pipeline
         gen_result = hf_pipeline(prompt, max_new_tokens=256, do_sample=True, temperature=0.7)[0]
         response = gen_result["generated_text"] if isinstance(gen_result, dict) else gen_result
 
     elapsed = time.time() - start_time
-    # By default, update performance stats with is_accurate=False.
-    # The manual feedback buttons can adjust the accurate count later.
     update_performance_stats(elapsed, False)
     app_state["chat_history"].append((user_input, response))
     return f"**Response:**\n{response}"
+
 
 # ---------------------------
 # Manual Feedback Functions

@@ -90,43 +90,58 @@ def chat_with_documents(user_input, files):
     if key in app_state.get("BASIC_RESPONSES", {}):
         response = app_state["BASIC_RESPONSES"][key]
     else:
+        # Load or reset documents
         if files:
             text, meta = get_file_text(files)
             process_and_store_chunks(text, meta)
         else:
-            # Reset context if no file uploaded
             app_state["faiss_index"] = None
             app_state["text_chunks"] = []
             app_state["meta_chunks"] = []
 
+        # Retrieve relevant context
         results = retrieve_context(user_input)
         if results:
             top_chunk, (filename, page_num) = results[0]
-            reference = f"[{filename}, {page_num}]"
+            reference = f"[{filename}, page {page_num}]"
             context = top_chunk
         else:
-            reference = ""
             context = ""
+            reference = ""
 
+        # 📌 Build the prompt
         prompt = (
-            f"User Question: {user_input}\n\n"
-            f"Context: {context}\n\n"
-            "Give a direct, clear answer. No extra explanation. End with reference like [filename, page number]."
+            f"Answer this question using the provided context only.\n"
+            f"Be direct and concise. End with the source in brackets.\n\n"
+            f"Context: {context}\n"
+            f"Question: {user_input}\n"
+            f"Answer:"
         )
 
+        # 🔥 Generate answer using Hugging Face pipeline
         hf_pipeline = app_state["hf_pipeline"]
-        gen_result = hf_pipeline(prompt, max_new_tokens=128, do_sample=False, temperature=0.3)[0]
-        raw_output = gen_result["generated_text"] if isinstance(gen_result, dict) else gen_result
+        gen_result = hf_pipeline(prompt, max_new_tokens=150, do_sample=False, temperature=0.3)[0]
+        full_output = gen_result["generated_text"] if isinstance(gen_result, dict) else gen_result
 
-        # Extract only the relevant answer (skip prompt echo)
-        response_lines = raw_output.split("\n")
-        response = next((line.strip() for line in response_lines if line.strip() and not line.lower().startswith("user question") and not line.lower().startswith("context")), raw_output)
+        # ✂️ Extract answer after "Answer:" (to remove echoed prompt)
+        if "Answer:" in full_output:
+            response = full_output.split("Answer:")[-1].strip()
+        else:
+            response = full_output.strip()
 
+        # 🧼 Optionally append the reference if it's missing
+        if reference and reference not in response:
+            response += f" {reference}"
+
+    # ⏱️ Log stats
     elapsed = time.time() - start_time
     update_performance_stats(elapsed, False)
+
+    # 💬 Add to history
     app_state["chat_history"].append((user_input, response))
 
-    return f"Response: {response}"
+    return f"**Response:** {response}"
+
 
 
 # ---------------------------

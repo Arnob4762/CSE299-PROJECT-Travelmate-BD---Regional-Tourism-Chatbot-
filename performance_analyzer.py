@@ -1,13 +1,16 @@
 import time
-from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+
+# ✅ Import required functions from app.py
+from app import chat_with_documents, get_file_text
 
 # Performance metrics tracking variables
 total_queries = 0
 accurate_responses = 0
 total_response_time = 0
 
-# Function to track query performance
+# Function to track query performance (optional wrapper)
 def track_query_performance(user_input, files):
     return analyze_performance(user_input, files)
 
@@ -24,20 +27,21 @@ def analyze_performance(user_input, files):
     total_response_time += response_time
     total_queries += 1
 
-    # Accuracy check: compare response with the expected content from the document
+    # Accuracy check: compare response with expected content from file
     expected_answer = retrieve_expected_answer(user_input, files)
     if expected_answer and response.lower() in expected_answer.lower():
         accurate_responses += 1
 
-    # Calculate accuracy and average response time
+    # Calculate performance stats
     accuracy = (accurate_responses / total_queries) * 100 if total_queries > 0 else 0
     avg_response_time = total_response_time / total_queries if total_queries > 0 else 0
 
     performance_report = (
-        f"Total Queries: {total_queries}\n"
-        f"Accurate Responses: {accurate_responses}\n"
-        f"Accuracy: {accuracy:.2f}%\n"
-        f"Average Response Time: {avg_response_time:.2f} seconds"
+        f"**Performance Summary:**\n\n"
+        f"- Total Queries: {total_queries}\n"
+        f"- Accurate Responses: {accurate_responses}\n"
+        f"- Accuracy: {accuracy:.2f}%\n"
+        f"- Average Response Time: {avg_response_time:.2f} seconds"
     )
 
     return performance_report

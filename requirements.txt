@@ -2,13 +2,11 @@ gradio
 python-dotenv
 PyPDF2
 python-docx
-langchain
-chromadb
 sentence-transformers
-numpy
-psutil
 transformers
 torch
-compressed-tensors
 accelerate
+faiss-cpu
+numpy
 scipy
+psutil

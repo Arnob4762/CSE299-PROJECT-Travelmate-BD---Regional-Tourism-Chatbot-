@@ -7,6 +7,11 @@ total_queries = 0
 accurate_responses = 0
 total_response_time = 0
 
+# Function to track query performance
+def track_query_performance(user_input, files):
+    return analyze_performance(user_input, files)
+
+# Function to analyze performance
 def analyze_performance(user_input, files):
     global total_queries, accurate_responses, total_response_time
 
@@ -37,6 +42,7 @@ def analyze_performance(user_input, files):
 
     return performance_report
 
+# Function to retrieve expected answer from uploaded files
 def retrieve_expected_answer(user_input, files):
     text, _ = get_file_text(files)
     return text

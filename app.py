@@ -93,8 +93,27 @@ BASIC_RESPONSES = {
     "what is your name": "I'm your Tourism Chatbot!",
 }
 
-# Chatbot response
+# Clean response function to format output
+def clean_response(response):
+    if isinstance(response, str):
+        return response
 
+    answer = response.get('result', '')
+    sources = response.get('source_documents', [])
+
+    # Format references like "Azmain Data.pdf, page 5"
+    formatted_sources = set()
+    for doc in sources:
+        if 'source' in doc.metadata:
+            source_name = os.path.basename(doc.metadata['source'])
+            page = doc.metadata.get('page', 'N/A')
+            formatted_sources.add(f"{source_name}, page {page}")
+
+    # Combine answer and formatted references
+    final_output = f"**Response:**\n{answer.strip()}\n\n**Sources:**\n" + "\n".join(f"- {src}" for src in formatted_sources)
+    return final_output
+
+# Chatbot response
 def chat_with_documents(user_input, files):
     if user_input.lower().strip() in BASIC_RESPONSES:
         return BASIC_RESPONSES[user_input.lower().strip()]
@@ -114,7 +133,11 @@ def chat_with_documents(user_input, files):
 
     response = hf_pipeline(prompt, max_new_tokens=256, do_sample=True, temperature=0.7)[0]
     text_only = response["generated_text"] if isinstance(response, dict) else response
-    return f"**Response:**\n{text_only}"
+    formatted_response = clean_response({
+        'result': text_only,
+        'source_documents': results
+    })
+    return formatted_response
 
 # Gradio tabs
 def budget_tab():

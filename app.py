@@ -7,7 +7,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from tour_budget import show_budget_calculator
 import performance_analyzer
 from core_utils import (
-    chat_with_documents, app_state
+    chat_with_documents, app_state, on_feedback_accurate, on_feedback_inaccurate, get_performance_report
 )
 
 # Load environment variables
@@ -44,14 +44,23 @@ def chatbot_tab():
         chatbot_files = gr.File(label="Upload PDF or DOCX", file_types=['.pdf', '.docx'], file_count="multiple")
         chatbot_output = gr.Markdown()
         chatbot_button = gr.Button("Get Answer")
+        # When the chatbot button is clicked, get the answer.
         chatbot_button.click(fn=chat_with_documents, inputs=[chatbot_input, chatbot_files], outputs=chatbot_output)
-    return chatbot_input, chatbot_files, chatbot_output
+        
+        # Add feedback buttons below the response.
+        feedback_message = gr.Markdown("")  # to display feedback acknowledgment
+        with gr.Row():
+            like_btn = gr.Button("👍 Accurate")
+            dislike_btn = gr.Button("👎 Inaccurate")
+        
+        like_btn.click(fn=on_feedback_accurate, inputs=[], outputs=feedback_message)
+        dislike_btn.click(fn=on_feedback_inaccurate, inputs=[], outputs=feedback_message)
+    return chatbot_input, chatbot_files, chatbot_output, feedback_message
 
 def performance_tab():
     with gr.Column() as performance_interface:
-        output_box = gr.Markdown(label="Performance Summary")
+        output_box = gr.Markdown("Click the button below to view performance summary.")
         refresh_button = gr.Button("Refresh Performance Summary")
-        # Simply return the current performance report
         refresh_button.click(fn=performance_analyzer.get_performance_report, inputs=[], outputs=output_box)
     return performance_interface
 

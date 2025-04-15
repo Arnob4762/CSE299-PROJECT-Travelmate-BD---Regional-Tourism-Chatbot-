@@ -49,11 +49,10 @@ def chatbot_tab():
 
 def performance_tab():
     with gr.Column() as performance_interface:
-        input_box = gr.Textbox(label="Enter a query to analyze:")
-        file_input = gr.File(label="Upload PDF or DOCX", file_types=[".pdf", ".docx"], file_count="multiple")
-        output_box = gr.Markdown()
-        analyze_button = gr.Button("Analyze Performance")
-        analyze_button.click(fn=performance_analyzer.analyze_performance, inputs=[input_box, file_input], outputs=output_box)
+        output_box = gr.Markdown(label="Performance Summary")
+        refresh_button = gr.Button("Refresh Performance Summary")
+        # Simply return the current performance report
+        refresh_button.click(fn=performance_analyzer.get_performance_report, inputs=[], outputs=output_box)
     return performance_interface
 
 def guide_map_tab():

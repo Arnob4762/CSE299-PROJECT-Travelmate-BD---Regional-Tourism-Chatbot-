@@ -19,15 +19,15 @@ load_dotenv()
 # Load embedding model
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
-# Load DeepSeek R1 Distilled Qwen 7B quantized model pipeline
+# Load DeepSeek R1 Distilled Qwen 1.5B model pipeline
 token = os.environ.get("HUGGINGFACE_TOKEN")
 tokenizer = AutoTokenizer.from_pretrained(
-    "RedHatAI/DeepSeek-R1-Distill-Qwen-7B-quantized.w4a16",
+    "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
     token=token,
     trust_remote_code=True
 )
 model = AutoModelForCausalLM.from_pretrained(
-    "RedHatAI/DeepSeek-R1-Distill-Qwen-7B-quantized.w4a16",
+    "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
     token=token,
     trust_remote_code=True,
     torch_dtype=torch.float16,

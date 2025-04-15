@@ -1,3 +1,5 @@
+# Final `app.py` file for the Tourism Chatbot project using FAISS as vector store
+
 import gradio as gr
 import time
 from dotenv import load_dotenv
@@ -91,24 +93,8 @@ BASIC_RESPONSES = {
     "what is your name": "I'm your Tourism Chatbot!",
 }
 
-# Clean the response by extracting references in the desired format
-def clean_response(response, results):
-    # Extract references in the correct format
-    references = []
-    for result in results:
-        # Assuming result is a tuple (text_chunk, (file_name, page_number))
-        file_name, page_num = result[1]  # result[1] is the metadata (file_name, page_num)
-        references.append(f"{file_name}, {page_num}")
-    
-    # Format the final response with references
-    formatted_response = {
-        "answer": response["generated_text"],  # Just the answer from the model
-        "references": ", ".join(references)  # Join references with commas
-    }
-    
-    return formatted_response
-
 # Chatbot response
+
 def chat_with_documents(user_input, files):
     if user_input.lower().strip() in BASIC_RESPONSES:
         return BASIC_RESPONSES[user_input.lower().strip()]
@@ -118,8 +104,6 @@ def chat_with_documents(user_input, files):
         process_and_store_chunks(text, meta)
 
     results = retrieve_context(user_input)
-    
-    # Prepare the prompt for the model
     context = "\n".join([f"[{m[0]}, {m[1]}]: {c}" for c, m in results])
 
     prompt = (
@@ -130,12 +114,7 @@ def chat_with_documents(user_input, files):
 
     response = hf_pipeline(prompt, max_new_tokens=256, do_sample=True, temperature=0.7)[0]
     text_only = response["generated_text"] if isinstance(response, dict) else response
-
-    # Call the clean_response function to format the answer and references
-    formatted_response = clean_response(response, results)
-    
-    # Return the answer and the references
-    return f"**Response:**\n{formatted_response['answer']}\n\n**References:**\n{formatted_response['references']}"
+    return f"**Response:**\n{text_only}"
 
 # Gradio tabs
 def budget_tab():

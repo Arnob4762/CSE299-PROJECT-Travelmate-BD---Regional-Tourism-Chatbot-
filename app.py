@@ -1,5 +1,3 @@
-# Final `app.py` file for the Tourism Chatbot project using FAISS as vector store
-
 import gradio as gr
 import time
 from dotenv import load_dotenv
@@ -93,25 +91,22 @@ BASIC_RESPONSES = {
     "what is your name": "I'm your Tourism Chatbot!",
 }
 
-# Clean response function to format output
-def clean_response(response):
-    if isinstance(response, str):
-        return response
-
-    answer = response.get('result', '')
-    sources = response.get('source_documents', [])
-
-    # Format references like "Azmain Data.pdf, page 5"
-    formatted_sources = set()
-    for doc in sources:
-        if 'source' in doc.metadata:
-            source_name = os.path.basename(doc.metadata['source'])
-            page = doc.metadata.get('page', 'N/A')
-            formatted_sources.add(f"{source_name}, page {page}")
-
-    # Combine answer and formatted references
-    final_output = f"**Response:**\n{answer.strip()}\n\n**Sources:**\n" + "\n".join(f"- {src}" for src in formatted_sources)
-    return final_output
+# Clean the response by extracting references in the desired format
+def clean_response(response, results):
+    # Extract references in the correct format
+    references = []
+    for result in results:
+        # Assuming result is a tuple (text_chunk, (file_name, page_number))
+        file_name, page_num = result[1]  # result[1] is the metadata (file_name, page_num)
+        references.append(f"{file_name}, {page_num}")
+    
+    # Format the final response with references
+    formatted_response = {
+        "answer": response["generated_text"],  # Just the answer from the model
+        "references": ", ".join(references)  # Join references with commas
+    }
+    
+    return formatted_response
 
 # Chatbot response
 def chat_with_documents(user_input, files):
@@ -123,6 +118,8 @@ def chat_with_documents(user_input, files):
         process_and_store_chunks(text, meta)
 
     results = retrieve_context(user_input)
+    
+    # Prepare the prompt for the model
     context = "\n".join([f"[{m[0]}, {m[1]}]: {c}" for c, m in results])
 
     prompt = (
@@ -133,11 +130,12 @@ def chat_with_documents(user_input, files):
 
     response = hf_pipeline(prompt, max_new_tokens=256, do_sample=True, temperature=0.7)[0]
     text_only = response["generated_text"] if isinstance(response, dict) else response
-    formatted_response = clean_response({
-        'result': text_only,
-        'source_documents': results
-    })
-    return formatted_response
+
+    # Call the clean_response function to format the answer and references
+    formatted_response = clean_response(response, results)
+    
+    # Return the answer and the references
+    return f"**Response:**\n{formatted_response['answer']}\n\n**References:**\n{formatted_response['references']}"
 
 # Gradio tabs
 def budget_tab():

@@ -1,5 +1,3 @@
-# Final `app.py` file for the Tourism Chatbot project using FAISS as vector store
-
 import gradio as gr
 import time
 from dotenv import load_dotenv
@@ -94,7 +92,6 @@ BASIC_RESPONSES = {
 }
 
 # Chatbot response
-
 def chat_with_documents(user_input, files):
     if user_input.lower().strip() in BASIC_RESPONSES:
         return BASIC_RESPONSES[user_input.lower().strip()]
@@ -116,12 +113,16 @@ def chat_with_documents(user_input, files):
     text_only = response["generated_text"] if isinstance(response, dict) else response
     return f"**Response:**\n{text_only}"
 
+# Performance analyzer tracking
+def track_query_performance(user_input, files):
+    return analyze_performance(user_input, files)
+
 # Gradio tabs
 def budget_tab():
     return show_budget_calculator()
 
 def performance_tab():
-    return analyze_performance()
+    return track_query_performance
 
 def guide_map_tab():
     return '<iframe src="https://arnob4762.github.io/tour-guide/" width="100%" height="600px" style="border:none;"></iframe>'

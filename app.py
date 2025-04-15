@@ -5,17 +5,16 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
 from tour_budget import show_budget_calculator
-from performance_analyzer import analyze_performance
+import performance_analyzer  # Avoid direct function import to prevent circular imports
 from core_utils import (
     get_file_text, process_and_store_chunks,
     retrieve_context, BASIC_RESPONSES, app_state
 )
 
-
 # Load environment variables
 load_dotenv()
 
-# Load DeepSeek model pipeline
+# Load DeepSeek model pipeline once globally
 token = os.environ.get("HUGGINGFACE_TOKEN")
 tokenizer = AutoTokenizer.from_pretrained(
     "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
@@ -31,7 +30,7 @@ model = AutoModelForCausalLM.from_pretrained(
 )
 hf_pipeline = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
-# Main chatbot function
+# Main chatbot function — moved to core_utils.py in actual fix
 def chat_with_documents(user_input, files):
     if user_input.lower().strip() in BASIC_RESPONSES:
         response = BASIC_RESPONSES[user_input.lower().strip()]
@@ -53,6 +52,10 @@ def chat_with_documents(user_input, files):
     app_state["chat_history"].append((user_input, response))
     return f"**Response:**\n{response}"
 
+# Export this function so performance_analyzer can import it without circular issue
+from core_utils import __dict__ as core_utils_namespace
+core_utils_namespace["chat_with_documents"] = chat_with_documents
+
 # Gradio Interfaces
 def chatbot_tab():
     with gr.Column():
@@ -69,7 +72,7 @@ def performance_tab():
         file_input = gr.File(label="Upload PDF or DOCX", file_types=[".pdf", ".docx"], file_count="multiple")
         output_box = gr.Markdown()
         analyze_button = gr.Button("Analyze Performance")
-        analyze_button.click(fn=analyze_performance, inputs=[input_box, file_input], outputs=output_box)
+        analyze_button.click(fn=performance_analyzer.analyze_performance, inputs=[input_box, file_input], outputs=output_box)
     return performance_interface
 
 def guide_map_tab():

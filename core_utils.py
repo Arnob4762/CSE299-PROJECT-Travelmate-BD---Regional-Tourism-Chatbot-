@@ -14,7 +14,7 @@ embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 app_state = {
     "chat_history": [],
     "total_queries": 0,
-    "accurate_responses": 0,
+    "accurate_responses": 0,  # Accuracy placeholder (update your accuracy logic as needed)
     "total_response_time": 0,
     "faiss_index": None,
     "text_chunks": [],
@@ -83,8 +83,11 @@ def get_performance_report():
 
 # Chatbot core
 def chat_with_documents(user_input, files):
-    if user_input.lower().strip() in app_state.get("BASIC_RESPONSES", {}):
-        response = app_state["BASIC_RESPONSES"][user_input.lower().strip()]
+    start_time = time.time()
+    # Use basic responses if applicable
+    key = user_input.lower().strip()
+    if key in app_state.get("BASIC_RESPONSES", {}):
+        response = app_state["BASIC_RESPONSES"][key]
     else:
         if files:
             text, meta = get_file_text(files)
@@ -98,8 +101,12 @@ def chat_with_documents(user_input, files):
             f"Just provide a clear and concise answer based only on the context. Avoid extra reasoning or justification."
         )
         hf_pipeline = app_state["hf_pipeline"]
-        response = hf_pipeline(prompt, max_new_tokens=256, do_sample=True, temperature=0.7)[0]
-        response = response["generated_text"] if isinstance(response, dict) else response
+        # Generate answer using the pipeline
+        gen_result = hf_pipeline(prompt, max_new_tokens=256, do_sample=True, temperature=0.7)[0]
+        response = gen_result["generated_text"] if isinstance(gen_result, dict) else gen_result
 
+    elapsed = time.time() - start_time
+    # Here we update performance stats. Currently, we set is_accurate as False.
+    update_performance_stats(elapsed, False)
     app_state["chat_history"].append((user_input, response))
     return f"**Response:**\n{response}"

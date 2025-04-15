@@ -1,5 +1,6 @@
 # Gradio temporary files
 .gradio/
+gradio_cached_examples/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -32,6 +33,8 @@ env/
 *.csv
 *.tsv
 *.json
+*.faiss
+*.npy
 
 # Temporary and cache files
 *.tmp
@@ -52,5 +55,6 @@ Thumbs.db
 huggingface_cache/
 ~/.cache/huggingface/
 
-
-
+# LangChain or Chroma fallback directories
+chromadb/
+langchain.db/

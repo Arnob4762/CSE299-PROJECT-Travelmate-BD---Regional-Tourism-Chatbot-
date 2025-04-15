@@ -375,11 +375,14 @@ Trip Duration: {days} days, {nights} hotel nights
 
 # Dynamic dropdown updater
 def update_options(destination):
-    return (
-        list(destinations[destination]["transport"].keys()),
-        list(destinations[destination]["hotels"].keys()),
-        list(destinations[destination]["restaurants"].keys())
-    )
+    transport_choices = list(destinations[destination]["transport"].keys())
+    hotel_choices = list(destinations[destination]["hotels"].keys())
+    restaurant_choices = list(destinations[destination]["restaurants"].keys())
+
+    return gr.update(choices=transport_choices, value=None), \
+           gr.update(choices=hotel_choices, value=None), \
+           gr.update(choices=restaurant_choices, value=None)
+
 
 # Wrapper to embed this UI in app.py without arguments
 def show_budget_calculator():

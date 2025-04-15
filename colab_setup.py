@@ -3,25 +3,20 @@ import subprocess
 import time
 
 # Step 1: Install required packages
-print("Installing requirements...")
+print("🔧 Installing requirements from requirements.txt...")
 subprocess.run(["pip", "install", "-r", "requirements.txt"])
 
-# Step 2: Install Gradio
-print("Setting up Gradio...")
-subprocess.run(["pip", "install", "gradio"])
+# (Gradio is already in requirements.txt — no need to install separately)
+# So Step 2 is not needed.
 
-# Step 3: Launch Gradio app
-print("Launching Gradio app...")
+# Step 2: Launch Gradio app
+print("🚀 Launching Gradio app...")
+import app  # Make sure app.py contains `demo = gr.Interface(...)`
 
-# Ensure app.py is the name of your Gradio script, or adjust accordingly
-import app  # Assuming your Gradio app is in a file named `app.py`
-
-# This will launch the app with a public URL
+# Launch the app with shareable public link (good for Colab)
 app.demo.launch(share=True)
 
-# Step 4: Keep the app running (Colab may stop execution otherwise)
+# Step 3: Prevent Colab from disconnecting
+print("⏳ Keeping Colab session alive...")
 while True:
     time.sleep(60)
-
-
-

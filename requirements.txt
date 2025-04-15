@@ -9,3 +9,4 @@ numpy
 psutil
 transformers
 torch
+compressed-tensors

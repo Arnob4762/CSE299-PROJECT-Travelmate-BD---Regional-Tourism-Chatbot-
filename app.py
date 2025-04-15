@@ -122,7 +122,13 @@ def budget_tab():
     return show_budget_calculator()
 
 def performance_tab():
-    return track_query_performance
+    with gr.Column():
+        input_box = gr.Textbox(label="Enter a query to analyze:")
+        file_input = gr.File(label="Upload PDF or DOCX", file_types=[".pdf", ".docx"], file_count="multiple")
+        output_box = gr.Markdown()
+        analyze_button = gr.Button("Analyze Performance")
+        analyze_button.click(fn=analyze_performance, inputs=[input_box, file_input], outputs=output_box)
+
 
 def guide_map_tab():
     return '<iframe src="https://arnob4762.github.io/tour-guide/" width="100%" height="600px" style="border:none;"></iframe>'

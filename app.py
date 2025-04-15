@@ -19,15 +19,15 @@ load_dotenv()
 # Load embedding model
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
-# Load DeepSeek LLM model pipeline
+# Load DeepSeek R1 Distilled Qwen 7B quantized model pipeline
 token = os.environ.get("HUGGINGFACE_TOKEN")
 tokenizer = AutoTokenizer.from_pretrained(
-    "deepseek-ai/deepseek-llm-7b-chat",
+    "RedHatAI/DeepSeek-R1-Distill-Qwen-7B-quantized.w4a16",
     token=token,
     trust_remote_code=True
 )
 model = AutoModelForCausalLM.from_pretrained(
-    "deepseek-ai/deepseek-llm-7b-chat",
+    "RedHatAI/DeepSeek-R1-Distill-Qwen-7B-quantized.w4a16",
     token=token,
     trust_remote_code=True,
     torch_dtype=torch.float16,
@@ -153,29 +153,11 @@ def chat_with_documents(user_input, files):
         "Please think carefully before responding. Your final answer should be helpful and grounded in the provided context."
     )
 
-    # Token check and truncate
-    input_tokens = tokenizer.encode(prompt, return_tensors="pt")
-    if input_tokens.shape[-1] > 3500:
-        print(f"[⚠️] Prompt token count before truncation: {input_tokens.shape[-1]}")
-        input_tokens = input_tokens[:, -3500:]  # keep last 3500 tokens
-        prompt = tokenizer.decode(input_tokens[0], skip_special_tokens=True)
-
-    try:
-        response = hf_pipeline(
-            prompt,
-            max_new_tokens=256,
-            do_sample=True,
-            temperature=0.7
-        )[0]
-
-        response_text = response.get("generated_text", "[No response]") if isinstance(response, dict) else response
-    except Exception as e:
-        print("[❌] Error in generation:", e)
-        response_text = "[Error generating response.]"
+    response = hf_pipeline(prompt, max_new_tokens=512, do_sample=True, temperature=0.7)[0]
+    response_text = response.get("generated_text", "[No response]") if isinstance(response, dict) else response
 
     references_markdown = "**References:**\n" + "\n".join(f"- {r}" for r in references) if references else "*No references found.*"
     return f"**Response:**\n{response_text}\n\n{references_markdown}"
-
 
 # Gradio tab: Budget Calculator
 

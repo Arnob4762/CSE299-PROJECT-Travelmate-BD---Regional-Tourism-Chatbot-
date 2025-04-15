@@ -124,14 +124,28 @@ def chat_with_documents(user_input, files):
     chunks = query_chromadb(user_input)
     context = ""
     references = []
+
     for doc, meta in chunks:
-        ref = meta.get("document_name", "Unknown")
-        if "page_number" in meta:
-            ref += f", page {meta['page_number']}"
-        if "paragraph_number" in meta:
-            ref += f", paragraph {meta['paragraph_number']}"
-        references.append(ref)
-        context += f"[{ref}]: {doc}\n\n"
+        refs = []
+        if isinstance(meta, list):
+            for m in meta:
+                ref = m.get("document_name", "Unknown")
+                if "page_number" in m:
+                    ref += f", page {m['page_number']}"
+                if "paragraph_number" in m:
+                    ref += f", paragraph {m['paragraph_number']}"
+                refs.append(ref)
+        else:
+            ref = meta.get("document_name", "Unknown")
+            if "page_number" in meta:
+                ref += f", page {meta['page_number']}"
+            if "paragraph_number" in meta:
+                ref += f", paragraph {meta['paragraph_number']}"
+            refs.append(ref)
+
+        references.extend(refs)
+        for r in refs:
+            context += f"[{r}]: {doc}\n\n"
 
     prompt = (
         f"Context:\n{context}\n\n"

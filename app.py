@@ -68,12 +68,18 @@ def get_file_text(files):
     except Exception as e:
         print(f"Error reading files: {e}")
         print(traceback.format_exc())
+
+    # Debugging: print the extracted text to verify it's correct
+    print(f"Extracted text:\n{text[:500]}...")  # Print first 500 characters for debugging
     return text.strip(), metadata
 
 def get_text_chunks(text, metadata):
     splitter = CharacterTextSplitter(separator="\n\n", chunk_size=500, chunk_overlap=100)
     chunks = splitter.split_text(text)
     chunk_metadata = [metadata[i % len(metadata)] for i in range(len(chunks))]
+
+    # Debugging: print out the first few chunks to verify chunking
+    print(f"Chunks:\n{chunks[:3]}")  # Print first 3 chunks for debugging
     return list(zip(chunks, chunk_metadata))
 
 def generate_embeddings(chunks):
@@ -157,6 +163,8 @@ def chat_with_documents(user_input, files):
     response_text = response.get("generated_text", "[No response]") if isinstance(response, dict) else response
 
     references_markdown = "**References:**\n" + "\n".join(f"- {r}" for r in references) if references else "*No references found.*"
+    
+    # Return only the final answer without showing reasoning
     return f"**Response:**\n{response_text}\n\n{references_markdown}"
 
 # Gradio tab: Budget Calculator

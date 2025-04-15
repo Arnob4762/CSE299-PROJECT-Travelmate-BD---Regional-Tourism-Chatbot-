@@ -1,38 +1,36 @@
 import time
-import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
 
-# ✅ Import required functions from app.py
-from app import chat_with_documents, get_file_text
+# ✅ Import shared utilities from core_utils.py
+from core_utils import get_file_text, chatbot_history, chat_with_documents
 
 # Performance metrics tracking variables
 total_queries = 0
 accurate_responses = 0
 total_response_time = 0
 
-# Function to track query performance (optional wrapper)
+# Optional: wrapper if needed elsewhere
 def track_query_performance(user_input, files):
     return analyze_performance(user_input, files)
 
-# Function to analyze performance
+# Analyze the performance of a query
 def analyze_performance(user_input, files):
     global total_queries, accurate_responses, total_response_time
 
     start_time = time.time()
 
-    # Process query and retrieve answer
+    # Get chatbot response (this also updates chatbot_history)
     response = chat_with_documents(user_input, files)
 
     response_time = time.time() - start_time
     total_response_time += response_time
     total_queries += 1
 
-    # Accuracy check: compare response with expected content from file
+    # Accuracy check: naive method — does response contain parts of the file text?
     expected_answer = retrieve_expected_answer(user_input, files)
     if expected_answer and response.lower() in expected_answer.lower():
         accurate_responses += 1
 
-    # Calculate performance stats
+    # Stats
     accuracy = (accurate_responses / total_queries) * 100 if total_queries > 0 else 0
     avg_response_time = total_response_time / total_queries if total_queries > 0 else 0
 
@@ -46,7 +44,7 @@ def analyze_performance(user_input, files):
 
     return performance_report
 
-# Function to retrieve expected answer from uploaded files
+# Get full file content (naively used for checking accuracy)
 def retrieve_expected_answer(user_input, files):
     text, _ = get_file_text(files)
     return text

@@ -55,14 +55,12 @@ def chatbot_tab():
         
         like_btn.click(fn=on_feedback_accurate, inputs=[], outputs=feedback_message)
         dislike_btn.click(fn=on_feedback_inaccurate, inputs=[], outputs=feedback_message)
-    return chatbot_input, chatbot_files, chatbot_output, feedback_message
 
 def performance_tab():
-    with gr.Column() as performance_interface:
+    with gr.Column():
         output_box = gr.Markdown("Click the button below to view performance summary.")
         refresh_button = gr.Button("Refresh Performance Summary")
         refresh_button.click(fn=performance_analyzer.get_performance_report, inputs=[], outputs=output_box)
-    return performance_interface
 
 def guide_map_tab():
     return '<iframe src="https://arnob4762.github.io/tour-guide/" width="100%" height="600px" style="border:none;"></iframe>'
